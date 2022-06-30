@@ -1,24 +1,19 @@
 {
+  "name": "New Tab in Group",
+  "description": "Open a new tab in the same group as the current tab.",
+  "version": "1.0",
+  "manifest_version": 3,
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
+  "permissions": ["tabs"],
   "commands": {
     "new-tab-in-group": {
-      "description": "Opens New Tab in Group",
+      "description": "Open New Tab in Group",
       "suggested_key": {
         "default": "Ctrl+Shift+Y",
         "mac": "Command+Shift+Y"
       }
     }
-  },
-  "description": "Adds a keyboard shortcut for opening a new tab in the current tab group",
-  "icons": {
-    "128": "icon.png"
-  },
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi4GObYvdl9CaEDSyoKEEztuUW8WJOfSi8bz9i279yNynFBSn5k4j4IS+JZHtsKK8tBtImO0umw9LS+kGGc35ReEY9oToUIhfLhgoCanBth5KcT4qCqUNiE1XavYtW4ZEearjikYenMGL6N+MX6pBzF6ZD9aa1SbagkR++T0YzMUNdrQDuy/X0Kz8Y1VQnqkpPKrAk2HsMQuVCqOmfBGarskpi6kp/Szurtb8cMLLLUafbHoXe/ZJtKG1f3ezQWbGtlX2B2Pr2GeKLW/td7V54JTyP+bME+UZ69C5NpqV1X4QY3y0bK8XLg4g6HJcfKSS8P7JVTzYo40PnCBI6Et1nwIDAQAB",
-  "manifest_version": 2,
-  "name": "New Tab in Group Keyboard Shortcut",
-  "permissions": ["tabs"],
-  "update_url": "https://clients2.google.com/service/update2/crx",
-  "version": "1.0"
+  }
 }
