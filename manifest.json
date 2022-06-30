@@ -15,5 +15,8 @@
         "mac": "Command+Shift+Y"
       }
     }
+  },
+  "icons": {
+    "256": "icon.png"
   }
 }
