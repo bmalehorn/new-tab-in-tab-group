@@ -1,7 +1,7 @@
 {
   "name": "New Tab in Group",
   "description": "Open a new tab in the same group as the current tab.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"

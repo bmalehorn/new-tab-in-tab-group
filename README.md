@@ -22,8 +22,8 @@ Press `⌘T`. You're done!
 
 ## Releasing
 
-```
-./package.sh
-```
+Go to `chrome://extensions/`.
+Click "pack extension".
+Locate the `new-tab-in-tab-group` folder. It will create a .crx file and a .pem file.
 
-Then, go to https://chrome.google.com/webstore/devconsole and upload the `new-tab-in-tab-group.zip` file just created.
+Then, go to https://chrome.google.com/webstore/devconsole and upload the `new-tab-in-tab-group.crx` file just created.
