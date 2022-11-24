@@ -13,39 +13,12 @@
     "swap-left": {
       "description": "Swap tab to the left"
     },
-    // "swap-right-skipping-tab-groups": {
-    //   "description": "Swap tab to the right, skipping tab groups"
-    // },
-    // "swap-left-skipping-tab-groups": {
-    //   "description": "Swap tab to the left, skipping tab groups"
-    // },
-    // "collapse-group": {
-    //   "description": "Collapse tab group"
-    // },
     "focus-left-into-group": {
       "description": "Move focus left into tab group"
     },
     "focus-right-into-group": {
       "description": "Move focus right into tab group"
     },
-    // "focus-to-next-group-or-tab-right": {
-    //   "description": "Move focus to next tab group or tab on the right, collapsing current tab group"
-    // },
-    // "focus-to-next-group-or-tab-left": {
-    //   "description": "Move focus to next tab group or tab on the left, collapsing current tab group"
-    // },
-    // "rename-tab-group": {
-    //   "description": "Rename tab group"
-    // },
-    // "create-tab-group": {
-    //   "description": "Create tab group"
-    // },
-    // "swap-group-right": {
-    //   "description": "Swap tab group to the right"
-    // },
-    // "swap-group-left": {
-    //   "description": "Swap tab group to the left"
-    // },
     "new-tab-in-group": {
       "description": "Open New Tab in Group",
       "suggested_key": {
