@@ -68,6 +68,26 @@ chrome.commands.onCommand.addListener(async (command) => {
   const tabs = await chrome.tabs.query({
     currentWindow: true,
   });
+  const tabGroups = await chrome.tabGroups.query({});
+
+  // skips collapsed tab groups
+  const getNextTab = (direction = 1) => {
+    let nextTabIndex = currentTab.index;
+    while (true) {
+      nextTabIndex += direction;
+      const nextTab = tabs[nextTabIndex];
+      if (!nextTab) {
+        return null;
+      }
+      const nextTabGroup = tabGroups.find(
+        (tabGroup) => tabGroup.id === nextTab.groupId
+      );
+      if (nextTabGroup?.collapsed) {
+        continue;
+      }
+      return nextTab;
+    }
+  };
 
   if (command === "new-tab-in-group") {
     const newTab = await chrome.tabs.create({ index: currentTab.index + 1 });
@@ -77,10 +97,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
     await chrome.tabs.group({ tabIds: newTab.id, groupId: currentTab.groupId });
   } else if (command === "swap-right" || command === "swap-left") {
-    const nextTabIndex =
-      command === "swap-right" ? currentTab.index + 1 : currentTab.index - 1;
-    // check if next tab is in a different tab group
-    const nextTab = tabs[nextTabIndex];
+    const nextTab = getNextTab(command === "swap-right" ? 1 : -1);
     if (!nextTab) {
       await chrome.tabs.ungroup(currentTab.id);
     } else if (currentTab.groupId === -1 && nextTab.groupId !== -1) {
@@ -94,20 +111,17 @@ chrome.commands.onCommand.addListener(async (command) => {
       await chrome.tabs.ungroup(currentTab.id);
     } else {
       // Swap the tab with the next tab.
-      await chrome.tabs.move(currentTab.id, { index: nextTabIndex });
+      await chrome.tabs.move(currentTab.id, { index: nextTab.index });
     }
   } else if (
     command === "focus-right-into-group" ||
     command === "focus-left-into-group"
   ) {
-    const nextTabIndex =
-      command === "focus-right-into-group"
-        ? currentTab.index + 1
-        : currentTab.index - 1;
-    const nextTab = tabs[nextTabIndex];
-    if (nextTab) {
-      await chrome.tabs.update(nextTab.id, { active: true });
+    const nextTab = getNextTab(command === "focus-right-into-group" ? 1 : -1);
+    if (!nextTab) {
+      return;
     }
+    await chrome.tabs.update(nextTab.id, { active: true });
   } else {
     throw new Error(`unimplemented command: ${command}`);
   }

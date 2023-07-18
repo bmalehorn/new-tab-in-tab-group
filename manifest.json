@@ -1,8 +1,9 @@
 {
   "name": "Tab and Tab Group Shortcuts",
   "description": "Adds shortcuts for creating tabs, reorganizing tabs, and moving the focus.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "manifest_version": 3,
+  "permissions": ["tabs", "tabGroups"],
   "background": {
     "service_worker": "background.js"
   },
