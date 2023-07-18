@@ -103,6 +103,14 @@ chrome.commands.onCommand.addListener(async (command) => {
     const { nextTab, skipped } = getNextTab(direction);
     if (!nextTab) {
       await chrome.tabs.ungroup(currentTab.id);
+      if (skipped) {
+        // if you skipped a collapsed tab group, I still want to swap to the far left / right
+        if (direction === -1) {
+          await chrome.tabs.move(currentTab.id, { index: 0 });
+        } else {
+          await chrome.tabs.move(currentTab.id, { index: tabs.length });
+        }
+      }
     } else if (currentTab.groupId === -1 && nextTab.groupId !== -1) {
       // Only change this tab to the same group as the next tab.
       // This way, you can position the tab at the start of the tab group.
