@@ -73,19 +73,21 @@ chrome.commands.onCommand.addListener(async (command) => {
   // skips collapsed tab groups
   const getNextTab = (direction = 1) => {
     let nextTabIndex = currentTab.index;
+    let skipped = false;
     while (true) {
       nextTabIndex += direction;
       const nextTab = tabs[nextTabIndex];
       if (!nextTab) {
-        return null;
+        return { nextTab, skipped };
       }
       const nextTabGroup = tabGroups.find(
         (tabGroup) => tabGroup.id === nextTab.groupId
       );
-      if (nextTabGroup?.collapsed) {
+      if (nextTabGroup && nextTabGroup.collapsed) {
+        skipped = true;
         continue;
       }
-      return nextTab;
+      return { nextTab, skipped };
     }
   };
 
@@ -97,7 +99,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     }
     await chrome.tabs.group({ tabIds: newTab.id, groupId: currentTab.groupId });
   } else if (command === "swap-right" || command === "swap-left") {
-    const nextTab = getNextTab(command === "swap-right" ? 1 : -1);
+    const direction = command === "swap-right" ? 1 : -1;
+    const { nextTab, skipped } = getNextTab(direction);
     if (!nextTab) {
       await chrome.tabs.ungroup(currentTab.id);
     } else if (currentTab.groupId === -1 && nextTab.groupId !== -1) {
@@ -109,6 +112,12 @@ chrome.commands.onCommand.addListener(async (command) => {
       });
     } else if (currentTab.groupId !== nextTab.groupId) {
       await chrome.tabs.ungroup(currentTab.id);
+    } else if (skipped) {
+      // for some reason, this was skipping over 1 extra tab each time.
+      // Undo this by subtracting the direction.
+      await chrome.tabs.move(currentTab.id, {
+        index: nextTab.index - direction,
+      });
     } else {
       // Swap the tab with the next tab.
       await chrome.tabs.move(currentTab.id, { index: nextTab.index });
@@ -117,7 +126,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     command === "focus-right-into-group" ||
     command === "focus-left-into-group"
   ) {
-    const nextTab = getNextTab(command === "focus-right-into-group" ? 1 : -1);
+    const direction = command === "focus-right-into-group" ? 1 : -1;
+    const { nextTab } = getNextTab(direction);
     if (!nextTab) {
       return;
     }
