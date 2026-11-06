@@ -5,7 +5,8 @@
   "manifest_version": 3,
   "permissions": ["tabs", "tabGroups"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "commands": {
     "swap-right": {

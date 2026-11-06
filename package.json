@@ -3,10 +3,15 @@
   "private": true,
   "scripts": {
     "build": "rm -rf dist && tsc && cp manifest.json icon.png dist/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:unit && npm run test:browser",
+    "test:unit": "node --test 'src/**/*.test.ts'",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/chrome": "^0.3.7",
     "typescript": "^7.0.2"
-  }
+  },
+  "type": "module"
 }

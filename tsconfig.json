@@ -2,11 +2,23 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "types": ["chrome"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "chrome"
+    ],
     "strict": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }

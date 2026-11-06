@@ -1,3 +1,5 @@
+import { getNextTab } from "./getNextTab.ts";
+
 // "commands": {
 //   "swap-right": {
 //     "suggested_key": {
@@ -58,7 +60,7 @@
 //     }
 //   }
 
-chrome.commands.onCommand.addListener(async (command) => {
+export const handleCommand = async (command: string) => {
   const currentTabs = await chrome.tabs.query({
     active: true,
     currentWindow: true,
@@ -74,29 +76,6 @@ chrome.commands.onCommand.addListener(async (command) => {
   });
   const tabGroups = await chrome.tabGroups.query({});
 
-  // skips collapsed tab groups
-  const getNextTab = (
-    direction = 1
-  ): { nextTab?: chrome.tabs.Tab; skipped: boolean } => {
-    let nextTabIndex = currentTab.index;
-    let skipped = false;
-    while (true) {
-      nextTabIndex += direction;
-      const nextTab = tabs[nextTabIndex];
-      if (!nextTab) {
-        return { nextTab, skipped };
-      }
-      const nextTabGroup = tabGroups.find(
-        (tabGroup) => tabGroup.id === nextTab.groupId
-      );
-      if (nextTabGroup && nextTabGroup.collapsed) {
-        skipped = true;
-        continue;
-      }
-      return { nextTab, skipped };
-    }
-  };
-
   if (command === "new-tab-in-group") {
     const newTab = await chrome.tabs.create({ index: currentTab.index + 1 });
     // no current group
@@ -109,7 +88,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     await chrome.tabs.group({ tabIds: newTab.id, groupId: currentTab.groupId });
   } else if (command === "swap-right" || command === "swap-left") {
     const direction = command === "swap-right" ? 1 : -1;
-    const { nextTab, skipped } = getNextTab(direction);
+    const { nextTab, skipped } = getNextTab(tabs, tabGroups, currentTab.index, direction);
     if (!nextTab) {
       await chrome.tabs.ungroup(currentTabId);
       if (skipped) {
@@ -144,7 +123,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     command === "focus-left-into-group"
   ) {
     const direction = command === "focus-right-into-group" ? 1 : -1;
-    const { nextTab } = getNextTab(direction);
+    const { nextTab } = getNextTab(tabs, tabGroups, currentTab.index, direction);
     if (nextTab?.id === undefined) {
       return;
     }
@@ -152,4 +131,11 @@ chrome.commands.onCommand.addListener(async (command) => {
   } else {
     throw new Error(`unimplemented command: ${command}`);
   }
-});
+};
+
+chrome.commands.onCommand.addListener(handleCommand);
+
+// Keyboard shortcuts can't be pressed from automated tests, so the browser
+// tests call this directly from the service worker. See tests/extension.spec.ts.
+(globalThis as { handleCommand?: typeof handleCommand }).handleCommand =
+  handleCommand;

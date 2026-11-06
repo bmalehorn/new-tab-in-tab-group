@@ -16,6 +16,15 @@ After changing the source, run `npm run build` again and click the reload icon o
 
 You're done! Press `⌘ Shift Y` to open tabs in the same tab group.
 
+## Testing
+
+Run `npm test`. The first time, also run `npx playwright install chromium`.
+
+1. `npm run test:unit` runs the `src/**/*.test.ts` unit tests with Node's built-in test runner.
+2. `npm run test:browser` builds `dist/`, loads it as an extension in Playwright's Chromium, and runs each command against real tabs and tab groups. See `tests/extension.spec.ts`. Keyboard shortcuts can't be pressed from automation, so the tests call the command handler from the extension's service worker. Add `--headed` to watch.
+
+`./deploy.sh` runs the tests before uploading.
+
 ## Mapping to ⌘T
 
 Go to `chrome://extensions/shortcuts`.

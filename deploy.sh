@@ -50,6 +50,7 @@ if [[ "$LOCAL_VERSION" == "$PUBLISHED_VERSION" || "$LOCAL_VERSION" == "$SUBMITTE
   exit 1
 fi
 
+npm test
 ./package.sh
 
 echo "Uploading..."
