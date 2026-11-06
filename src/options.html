@@ -9,26 +9,31 @@
         font-size: 14px;
         padding: 8px 16px;
       }
-      label {
-        display: flex;
-        gap: 8px;
-        align-items: baseline;
+      input {
+        width: 4em;
       }
       p {
         color: #666;
-        margin-left: 24px;
       }
     </style>
   </head>
   <body>
     <label>
-      <input type="checkbox" id="autoCloseStaleTabs" />
-      Close tabs to the right of the <code>---</code> tab group after 7 days
-      without a visit
+      Close tabs to the right of the <code>---</code> tab group after
+      <input
+        type="number"
+        id="autoCloseAfterDays"
+        min="0"
+        step="any"
+        placeholder="off"
+      />
+      days without a visit
     </label>
     <p>
-      Pinned and active tabs are never closed. With no tab group titled
-      <code>---</code>, nothing is closed.
+      Leave empty or set to 0 to never close tabs. Pinned and active tabs, and
+      tabs in the <code>---</code> group, are never closed. With no
+      <code>---</code> group, nothing is closed. Any group titled with only
+      dashes counts, like <code>-</code> or <code>—</code>.
     </p>
     <p>
       To change keyboard shortcuts, go to

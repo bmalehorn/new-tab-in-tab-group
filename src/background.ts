@@ -130,6 +130,19 @@ export const handleCommand = async (command: string) => {
       return;
     }
     await chrome.tabs.update(nextTab.id, { active: true });
+  } else if (command === "focus-right" || command === "focus-left") {
+    // Like Chrome's own ⌘⇧] / ⌘⇧[, wraps around at the ends, but also skips
+    // collapsed groups.
+    const direction = command === "focus-right" ? 1 : -1;
+    let { nextTab } = getNextTab(tabs, tabGroups, currentTab.index, direction);
+    if (!nextTab) {
+      const start = direction === 1 ? -1 : tabs.length;
+      ({ nextTab } = getNextTab(tabs, tabGroups, start, direction));
+    }
+    if (nextTab?.id === undefined) {
+      return;
+    }
+    await chrome.tabs.update(nextTab.id, { active: true });
   } else if (command === "new-tab-after-separator") {
     await newTabAfterSeparator(tabs, tabGroups);
   } else if (command === "move-across-separator") {
@@ -220,13 +233,15 @@ const moveAcrossSeparator = async (
 };
 
 export const closeStaleTabs = async (now = Date.now()) => {
-  if (!(await getSettings()).autoCloseStaleTabs) {
+  const { autoCloseAfterDays } = await getSettings();
+  if (!(autoCloseAfterDays > 0)) {
     return;
   }
+  const maxAgeMs = autoCloseAfterDays * 24 * 60 * 60 * 1000;
   const windows = await chrome.windows.getAll({ populate: true });
   const tabGroups = await chrome.tabGroups.query({});
   const staleIds = windows
-    .flatMap((window) => findStaleTabs(window.tabs ?? [], tabGroups, now))
+    .flatMap((window) => findStaleTabs(window.tabs ?? [], tabGroups, now, maxAgeMs))
     .map((tab) => tab.id)
     .filter((id) => id !== undefined);
   if (staleIds.length > 0) {

@@ -1,9 +1,13 @@
-// The first tab group titled "---" splits the window: tabs to its left are
-// kept, tabs to its right are temporary. New tabs open right after it, and
-// temporary tabs close after a week without a visit.
+// The first tab group titled with only dashes, like "---", splits the window:
+// tabs to its left are kept, tabs to its right are temporary. New tabs open
+// right after it, and temporary tabs can close after some days without a visit.
 
-export const SEPARATOR_TITLE = "---";
-export const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+// Any dash-like characters count, since macOS turns "--" into "—" as you type.
+// \p{Pd} covers -, –, —, ― and friends; U+2212 is the minus sign.
+const SEPARATOR_TITLE = /^\s*[\p{Pd}\u2212]+\s*$/u;
+
+export const isSeparator = (tabGroup: { title?: string }) =>
+  SEPARATOR_TITLE.test(tabGroup.title ?? "");
 
 type Tab = { index: number; groupId: number };
 
@@ -14,9 +18,7 @@ export const findSeparator = (
   tabGroups: { id: number; title?: string }[]
 ): { groupId: number; start: number; end: number } | undefined => {
   const separatorIds = new Set(
-    tabGroups
-      .filter((tabGroup) => tabGroup.title === SEPARATOR_TITLE)
-      .map((tabGroup) => tabGroup.id)
+    tabGroups.filter(isSeparator).map((tabGroup) => tabGroup.id)
   );
   const sorted = [...tabs].sort((a, b) => a.index - b.index);
   const first = sorted.find((tab) => separatorIds.has(tab.groupId));
@@ -31,25 +33,30 @@ export const findSeparator = (
   };
 };
 
-// Tabs to the right of the separator that haven't been visited in a week.
-// Active and pinned tabs are never stale.
+// Tabs to the right of the separator that haven't been visited in `maxAgeMs`.
+// Active and pinned tabs, and tabs in any separator group, are never stale.
 export const findStaleTabs = <
   T extends Tab & { active: boolean; pinned: boolean; lastAccessed?: number }
 >(
   tabs: T[],
   tabGroups: { id: number; title?: string }[],
-  now: number
+  now: number,
+  maxAgeMs: number
 ): T[] => {
   const separator = findSeparator(tabs, tabGroups);
   if (!separator) {
     return [];
   }
+  const separatorIds = new Set(
+    tabGroups.filter(isSeparator).map((tabGroup) => tabGroup.id)
+  );
   return tabs.filter(
     (tab) =>
       tab.index > separator.end &&
+      !separatorIds.has(tab.groupId) &&
       !tab.active &&
       !tab.pinned &&
       tab.lastAccessed !== undefined &&
-      now - tab.lastAccessed > STALE_AFTER_MS
+      now - tab.lastAccessed > maxAgeMs
   );
 };

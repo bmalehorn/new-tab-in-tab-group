@@ -1,13 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findSeparator, findStaleTabs, STALE_AFTER_MS } from "./separator.ts";
+import { findSeparator, findStaleTabs, isSeparator } from "./separator.ts";
 
 const UNGROUPED = -1;
 const tabGroups = [
   { id: 1, title: "work" },
   { id: 2, title: "---" },
-  { id: 3, title: "---" },
+  { id: 3, title: "—" },
 ];
+
+test("isSeparator accepts titles made only of dashes", () => {
+  for (const title of ["-", "---", "—", "–—", "―――", "−−−", " --- "]) {
+    assert.equal(isSeparator({ title }), true, title);
+  }
+  for (const title of [undefined, "", "a-", "--x", "___", "..."]) {
+    assert.equal(isSeparator({ title }), false, String(title));
+  }
+});
 
 test("findSeparator returns the leftmost --- group", () => {
   const tabs = [
@@ -39,8 +48,9 @@ const tab = (index: number, groupId: number, ageMs: number, extra = {}) => ({
   lastAccessed: now - ageMs,
   ...extra,
 });
-const old = STALE_AFTER_MS + 1;
-const recent = STALE_AFTER_MS - 1;
+const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const old = MAX_AGE + 1;
+const recent = MAX_AGE - 1;
 
 test("findStaleTabs returns old tabs right of the separator", () => {
   const tabs = [
@@ -51,14 +61,15 @@ test("findStaleTabs returns old tabs right of the separator", () => {
     tab(4, 1, old), // grouped, still right of the separator
     tab(5, UNGROUPED, old, { active: true }),
     tab(6, UNGROUPED, old, { lastAccessed: undefined }),
+    tab(7, 3, old), // in a second separator
   ];
   assert.deepEqual(
-    findStaleTabs(tabs, tabGroups, now).map((tab) => tab.index),
+    findStaleTabs(tabs, tabGroups, now, MAX_AGE).map((tab) => tab.index),
     [2, 4]
   );
 });
 
 test("findStaleTabs closes nothing without a separator", () => {
   const tabs = [tab(0, UNGROUPED, old), tab(1, 1, old)];
-  assert.deepEqual(findStaleTabs(tabs, tabGroups, now), []);
+  assert.deepEqual(findStaleTabs(tabs, tabGroups, now, MAX_AGE), []);
 });

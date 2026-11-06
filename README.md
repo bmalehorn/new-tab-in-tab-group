@@ -31,35 +31,41 @@ Run `npm test`. The first time, also run `npx playwright install chromium`.
 
 ## The `---` separator
 
-Create a tab group titled `---` (collapse it so it takes little space). Tabs to its left are ones you keep. Tabs to its right are temporary:
+Create a tab group titled `---` (collapse it so it takes little space). Any title made only of dashes works, like `-` or `—`, which helps since macOS turns `--` into `—` as you type. If there are several, the leftmost one counts. Tabs to its left are ones you keep. Tabs to its right are temporary:
 
 - "Open new tab after the --- tab group" opens a tab right after `---`. With no `---` group, it opens leftmost.
 - "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left. With no `---` group, it moves them leftmost.
-- Optionally, tabs to the right of `---` close automatically once they haven't been visited for 7 days. Pinned and active tabs never close. With no `---` group, nothing closes. This is off by default, see Settings.
+- Optionally, tabs to the right of `---` close automatically once they haven't been visited for some number of days. Pinned and active tabs, and tabs in any `---` group, never close. With no `---` group, nothing closes. This is off by default, see Settings.
 
 ## Settings
 
 Go to `chrome://extensions`, click Details on "Tab and Tab Group Shortcuts", then click "Extension options". Or right-click the extension's icon in the toolbar and click Options.
 
-- "Close tabs to the right of the `---` tab group after 7 days without a visit": off by default.
+- "Close tabs to the right of the `---` tab group after N days without a visit": empty by default, which means off. 0 also means off.
 
 ## Shortcuts
 
-| Shortcut      | Command                                                    | Set automatically? |
-| ------------- | ---------------------------------------------------------- | ------------------ |
-| `⌘ Shift Y`   | Open New Tab in Group                                      | Yes                |
-| `⌘ Shift ↑`   | Swap tab to the left                                       | Yes                |
-| `⌘ Shift ↓`   | Swap tab to the right                                      | Yes                |
-| `⌘T`          | Open new tab after the --- tab group                       | No                 |
-| `⌘D`          | Move selected tabs to the other side of the --- tab group  | No                 |
+Only `⌘ Shift Y` is set automatically, and only on a fresh install. Suggested bindings:
 
-Chrome only applies default shortcuts on a fresh install, and never for keys Chrome itself uses like `⌘T` and `⌘D`. To bind any shortcut by hand:
+| Shortcut      | Command                                                     |
+| ------------- | ----------------------------------------------------------- |
+| `⌘ Shift Y`   | Open New Tab in Group                                       |
+| `⌘T`          | Open new tab after the --- tab group                        |
+| `⌘D`          | Move selected tabs to the other side of the --- tab group   |
+| `⌘ Shift ↑`   | Swap tab to the left                                        |
+| `⌘ Shift ↓`   | Swap tab to the right                                       |
+| `⌘ Shift ,`   | Move focus to the tab on the left, wrapping around          |
+| `⌘ Shift .`   | Move focus to the tab on the right, wrapping around         |
+
+To bind a shortcut:
 
 1. Go to `chrome://extensions/shortcuts`.
 2. Find the "Tab and Tab Group Shortcuts" extension.
 3. Click the ✎ icon next to the command and press the keys, e.g. `⌘T`.
 
 If a key is already bound to another command of this extension, remove it from that command first.
+
+Chrome's own previous / next tab shortcuts (`⌘ Shift [` / `⌘ Shift ]` and `⌘ Option ←` / `⌘ Option →`) can't be taken over. Extension shortcuts can't use brackets or combine `⌘` with `Option`. The "Move focus ... wrapping around" commands work like Chrome's but skip collapsed groups, and `⌘ Shift ,` / `⌘ Shift .` is the closest available pair.
 
 ## Releasing
 

@@ -210,6 +210,13 @@ const cases: [command: string, before: string, after: string][] = [
   ["focus-right-into-group", "a b*", "a b*"],
   ["focus-left-into-group", "[a b] c*", "[a b*] c"],
 
+  ["focus-right", "a* [b] c", "a [b*] c"],
+  ["focus-right", "a* {b} c", "a {b} c*"],
+  ["focus-right", "a b c*", "a* b c"],
+  ["focus-right", "{a} b c*", "{a} b* c"],
+  ["focus-left", "a* b c", "a b c*"],
+  ["focus-left", "a b* c", "a* b c"],
+
   ["new-tab-after-separator", "a ---{x} b c*", "a ---{x} new* b c"],
   ["new-tab-after-separator", "a ---[x] [b c*]", "a ---[x] new* [b c]"],
   ["new-tab-after-separator", "a b*", "new* a b"],
@@ -221,6 +228,8 @@ const cases: [command: string, before: string, after: string][] = [
   ["move-across-separator", "a+ b* c ---{x} d", "c ---{x} a+ b* d"],
   ["move-across-separator", "a b c*", "c* a b"],
   ["move-across-separator", "a ---{x} b ---{y} c*", "a c* ---{x} b ---{y}"],
+  ["move-across-separator", "a —{x} b*", "a b* —{x}"],
+  ["new-tab-after-separator", "a* -[x] b", "a -[x] new* b"],
 ];
 
 for (const [command, before, after] of cases) {
@@ -232,22 +241,25 @@ for (const [command, before, after] of cases) {
   });
 }
 
-// Turns on auto-close by clicking the checkbox on the real options page.
-const enableAutoClose = async (
+// Sets the auto-close days by typing into the real options page.
+const setAutoCloseDays = async (
   context: BrowserContext,
-  serviceWorker: Worker
+  serviceWorker: Worker,
+  days: string
 ) => {
   const extensionId = new URL(serviceWorker.url()).host;
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/options.html`);
-  const checkbox = page.getByLabel(/Close tabs to the right/);
-  await expect(checkbox).not.toBeChecked();
-  await checkbox.check();
+  const input = page.getByLabel(/Close tabs to the right/);
+  await expect(input).toHaveValue("");
+  await input.fill(days);
   await expect
     .poll(() =>
-      serviceWorker.evaluate(() => chrome.storage.sync.get("autoCloseStaleTabs"))
+      serviceWorker.evaluate(() => chrome.storage.sync.get("autoCloseAfterDays"))
     )
-    .toEqual({ autoCloseStaleTabs: true });
+    .toEqual({ autoCloseAfterDays: Number(days) });
+  await page.reload();
+  await expect(input).toHaveValue(Number(days) > 0 ? days : "");
   await page.close();
 };
 
@@ -257,12 +269,12 @@ test("auto-close is off by default", async ({ tabs }) => {
   expect(await tabs.layout()).toBe("a ---{x} b c*");
 });
 
-test("closes tabs right of --- after 7 days without a visit", async ({
+test("closes tabs right of --- after the set number of days", async ({
   tabs,
   extensionContext,
   serviceWorker,
 }) => {
-  await enableAutoClose(extensionContext, serviceWorker);
+  await setAutoCloseDays(extensionContext, serviceWorker, "7");
   await tabs.setup("a ---{x} b [c d] e*");
   await tabs.closeStaleTabs(6);
   expect(await tabs.layout()).toBe("a ---{x} b [c d] e*");
@@ -270,12 +282,34 @@ test("closes tabs right of --- after 7 days without a visit", async ({
   expect(await tabs.layout()).toBe("a ---{x} e*");
 });
 
+test("auto-close never closes separator tabs", async ({
+  tabs,
+  extensionContext,
+  serviceWorker,
+}) => {
+  await setAutoCloseDays(extensionContext, serviceWorker, "1");
+  await tabs.setup("a ---{x} b —{y z} c*");
+  await tabs.closeStaleTabs(2);
+  expect(await tabs.layout()).toBe("a ---{x} —{y z} c*");
+});
+
+test("0 days turns auto-close off", async ({
+  tabs,
+  extensionContext,
+  serviceWorker,
+}) => {
+  await setAutoCloseDays(extensionContext, serviceWorker, "0");
+  await tabs.setup("a ---{x} b c*");
+  await tabs.closeStaleTabs(1000);
+  expect(await tabs.layout()).toBe("a ---{x} b c*");
+});
+
 test("closes nothing without a --- group", async ({
   tabs,
   extensionContext,
   serviceWorker,
 }) => {
-  await enableAutoClose(extensionContext, serviceWorker);
+  await setAutoCloseDays(extensionContext, serviceWorker, "7");
   await tabs.setup("a [b] c*");
   await tabs.closeStaleTabs(8);
   expect(await tabs.layout()).toBe("a [b] c*");

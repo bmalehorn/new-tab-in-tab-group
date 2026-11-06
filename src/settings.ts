@@ -2,11 +2,13 @@
 // computers. Change them on the extension's options page (options.html).
 
 export type Settings = {
-  autoCloseStaleTabs: boolean;
+  // Close tabs right of the separator after this many days without a visit.
+  // 0 turns auto-close off.
+  autoCloseAfterDays: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  autoCloseStaleTabs: false,
+  autoCloseAfterDays: 0,
 };
 
 export const getSettings = async (): Promise<Settings> =>

@@ -13,18 +13,16 @@
   },
   "commands": {
     "swap-right": {
-      "description": "Swap tab to the right",
-      "suggested_key": {
-        "default": "Ctrl+Shift+Down",
-        "mac": "Command+Shift+Down"
-      }
+      "description": "Swap tab to the right"
     },
     "swap-left": {
-      "description": "Swap tab to the left",
-      "suggested_key": {
-        "default": "Ctrl+Shift+Up",
-        "mac": "Command+Shift+Up"
-      }
+      "description": "Swap tab to the left"
+    },
+    "focus-left": {
+      "description": "Move focus to the tab on the left, wrapping around"
+    },
+    "focus-right": {
+      "description": "Move focus to the tab on the right, wrapping around"
     },
     "focus-left-into-group": {
       "description": "Move focus left into tab group"

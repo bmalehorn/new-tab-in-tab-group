@@ -45,7 +45,7 @@ Each test case describes tab layouts as strings:
 ["move-across-separator", "a b+ ---{x} c d* e+", "a b+ d* e+ ---{x} c"],
 ```
 
-- `[a b]` is an expanded group and `{a b}` a collapsed one. A prefix sets the group's title: `---{x}`.
+- `[a b]` is an expanded group and `{a b}` a collapsed one. A prefix sets the group's title: `---{x}`. A separator is any group titled with only dashes (`-`, `—`, ...), see `isSeparator` in `src/separator.ts`.
 - `*` marks the active tab and `+` other selected tabs.
 - Tabs the extension creates show up as `new`.
 
@@ -55,7 +55,11 @@ When adding a test, check it fails without the fix. Chrome's tab APIs have off-b
 
 ## Keyboard shortcuts
 
-Chrome ignores `suggested_key` for keys it uses itself (like ⌘T and ⌘D), allows at most 4 suggested keys, and only applies them on a fresh install. Existing users have to bind new shortcuts in `chrome://extensions/shortcuts`. When adding a command, update the shortcut table in README.md.
+Don't add `suggested_key` defaults to existing commands: users already have their own bindings, and a new default can take a key they use. Chrome also ignores `suggested_key` for keys it uses itself (like ⌘T and ⌘D), allows at most 4, and only applies them on a fresh install. Users bind shortcuts in `chrome://extensions/shortcuts`.
+
+Extension shortcuts can only use A-Z, 0-9, comma, period, arrows, Home/End, PageUp/PageDown, Space, Insert, Delete and media keys, and can't combine ⌘ (Ctrl) with Option (Alt). So Chrome's ⌘⇧[ / ⌘⇧] can't be rebound.
+
+When adding a command, update the shortcut table in README.md.
 
 ## Releasing
 

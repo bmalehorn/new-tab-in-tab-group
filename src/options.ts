@@ -1,10 +1,13 @@
 import { getSettings, setSettings } from "./settings.ts";
 
-const autoCloseStaleTabs = document.getElementById(
-  "autoCloseStaleTabs"
+const autoCloseAfterDays = document.getElementById(
+  "autoCloseAfterDays"
 ) as HTMLInputElement;
 
-autoCloseStaleTabs.checked = (await getSettings()).autoCloseStaleTabs;
-autoCloseStaleTabs.addEventListener("change", () =>
-  setSettings({ autoCloseStaleTabs: autoCloseStaleTabs.checked })
-);
+const days = (await getSettings()).autoCloseAfterDays;
+autoCloseAfterDays.value = days > 0 ? String(days) : "";
+autoCloseAfterDays.addEventListener("input", () => {
+  const value = autoCloseAfterDays.valueAsNumber;
+  // Empty, 0, negative, or not a number all mean off.
+  setSettings({ autoCloseAfterDays: value > 0 ? value : 0 });
+});
