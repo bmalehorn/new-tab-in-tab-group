@@ -39,6 +39,12 @@ if [[ "${1:-}" == "--status" ]]; then
   exit 0
 fi
 
+# The store rejects uploads while a submission is in review, so this withdraws it.
+if [[ "${1:-}" == "--cancel" ]]; then
+  api POST "$API:cancelSubmission" | jq .
+  exit 0
+fi
+
 if [[ "$LOCAL_VERSION" == "$PUBLISHED_VERSION" || "$LOCAL_VERSION" == "$SUBMITTED_VERSION" ]]; then
   echo "Version $LOCAL_VERSION is already in the store. Bump \"version\" in manifest.json first." >&2
   exit 1

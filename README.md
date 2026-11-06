@@ -26,7 +26,7 @@ Press `⌘T`. You're done!
 
 ## Automated deploys
 
-Bump `"version"` in `manifest.json`, then run `./deploy.sh`. It packages the zip, uploads it with the [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api), and submits it for review. `./deploy.sh --status` prints the store's current state.
+Bump `"version"` in `manifest.json`, then run `./deploy.sh`. It packages the zip, uploads it with the [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api), and submits it for review. `./deploy.sh --status` prints the store's current state. The store won't take a new upload while a version is in review; `./deploy.sh --cancel` withdraws that submission.
 
 One-time setup, which puts credentials in the untracked `.deploy.env`:
 
