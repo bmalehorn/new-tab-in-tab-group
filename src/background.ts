@@ -1,5 +1,9 @@
 import { getNextTab } from "./getNextTab.ts";
-import { findSeparator, findStaleTabs } from "./separator.ts";
+import {
+  findSeparator,
+  findStaleTabs,
+  NEW_SEPARATOR_TITLE,
+} from "./separator.ts";
 import { getSettings } from "./settings.ts";
 
 // "commands": {
@@ -146,7 +150,7 @@ export const handleCommand = async (command: string) => {
   } else if (command === "new-tab-after-separator") {
     await newTabAfterSeparator(tabs, tabGroups);
   } else if (command === "move-across-separator") {
-    await moveAcrossSeparator(currentTab, tabs, tabGroups);
+    await moveAcrossSeparator(currentTabId, tabs, tabGroups);
   } else {
     throw new Error(`unimplemented command: ${command}`);
   }
@@ -156,13 +160,39 @@ export const handleCommand = async (command: string) => {
 const firstUnpinnedIndex = (tabs: chrome.tabs.Tab[]) =>
   tabs.filter((tab) => tab.pinned).length;
 
-const newTabAfterSeparator = async (
+// Returns the separator, first creating one at the far left if there isn't
+// one: a collapsed "———" group holding a blank tab. Also returns the window's
+// tabs, re-read if the separator was just created.
+const ensureSeparator = async (
   tabs: chrome.tabs.Tab[],
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
   const separator = findSeparator(tabs, tabGroups);
-  const index = separator ? separator.end + 1 : firstUnpinnedIndex(tabs);
-  const newTab = await chrome.tabs.create({ index });
+  if (separator) {
+    return { separator, tabs };
+  }
+  const placeholder = await chrome.tabs.create({
+    url: "about:blank",
+    index: firstUnpinnedIndex(tabs),
+    active: false,
+  });
+  const groupId = await chrome.tabs.group({ tabIds: placeholder.id! });
+  await chrome.tabGroups.update(groupId, {
+    title: NEW_SEPARATOR_TITLE,
+    collapsed: true,
+  });
+  return {
+    separator: { groupId, start: placeholder.index, end: placeholder.index },
+    tabs: await chrome.tabs.query({ currentWindow: true }),
+  };
+};
+
+const newTabAfterSeparator = async (
+  tabs: chrome.tabs.Tab[],
+  tabGroups: chrome.tabGroups.TabGroup[]
+) => {
+  const { separator } = await ensureSeparator(tabs, tabGroups);
+  const newTab = await chrome.tabs.create({ index: separator.end + 1 });
   // A tab created at the edge of a group can land inside it.
   if (newTab.id !== undefined && newTab.groupId !== -1) {
     await chrome.tabs.ungroup(newTab.id);
@@ -172,17 +202,16 @@ const newTabAfterSeparator = async (
 // Moves the selected tabs to just left of the separator, or if the active tab
 // is already left of it, to just right of it.
 const moveAcrossSeparator = async (
-  currentTab: chrome.tabs.Tab,
-  tabs: chrome.tabs.Tab[],
+  currentTabId: number,
+  windowTabs: chrome.tabs.Tab[],
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
-  const separator = findSeparator(tabs, tabGroups);
+  const { separator, tabs } = await ensureSeparator(windowTabs, tabGroups);
+  const currentTab = tabs.find((tab) => tab.id === currentTabId)!;
   const tabIds = tabs
     .filter(
       (tab) =>
-        tab.highlighted &&
-        !tab.pinned &&
-        (!separator || tab.groupId !== separator.groupId)
+        tab.highlighted && !tab.pinned && tab.groupId !== separator.groupId
     )
     .map((tab) => tab.id)
     .filter((id) => id !== undefined);
@@ -195,14 +224,6 @@ const moveAcrossSeparator = async (
     .map((tab) => tab.id!);
   if (groupedIds.length > 0) {
     await chrome.tabs.ungroup(groupedIds as [number, ...number[]]);
-  }
-
-  if (!separator) {
-    // Moving each tab to the front in reverse keeps their order.
-    for (const tabId of [...tabIds].reverse()) {
-      await chrome.tabs.move(tabId, { index: firstUnpinnedIndex(tabs) });
-    }
-    return;
   }
 
   // Each move shifts the separator, so look it up again every time.

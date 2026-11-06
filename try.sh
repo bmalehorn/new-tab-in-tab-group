@@ -11,6 +11,14 @@ CHROME=$(node -e "import('@playwright/test').then(({ chromium }) => console.log(
 if [[ ! -x "$CHROME" ]]; then
   npx playwright install chromium
 fi
+if pgrep -f -- "--user-data-dir=$PWD/.chrome-profile" >/dev/null; then
+  echo "Chrome for Testing is already running with this profile. Quit it (⌘Q) and run ./try.sh again." >&2
+  exit 1
+fi
+# Chrome caches an unpacked extension's service worker and reuses it on the
+# next launch as long as the manifest version is unchanged, so without this
+# you'd keep running the old background.js.
+rm -rf ".chrome-profile/Default/Service Worker"
 exec "$CHROME" \
   --user-data-dir="$PWD/.chrome-profile" \
   --disable-extensions-except="$PWD/dist" \

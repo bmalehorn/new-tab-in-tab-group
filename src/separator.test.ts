@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findSeparator, findStaleTabs, isSeparator } from "./separator.ts";
+import {
+  findSeparator,
+  findStaleTabs,
+  isSeparator,
+  NEW_SEPARATOR_TITLE,
+} from "./separator.ts";
 
 const UNGROUPED = -1;
 const tabGroups = [
@@ -10,7 +15,7 @@ const tabGroups = [
 ];
 
 test("isSeparator accepts titles made only of dashes", () => {
-  for (const title of ["-", "---", "—", "–—", "―――", "−−−", " --- "]) {
+  for (const title of ["-", "---", "—", "–—", "―――", "−−−", " --- ", NEW_SEPARATOR_TITLE]) {
     assert.equal(isSeparator({ title }), true, title);
   }
   for (const title of [undefined, "", "a-", "--x", "___", "..."]) {

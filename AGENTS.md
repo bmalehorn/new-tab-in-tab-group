@@ -22,7 +22,7 @@ npm run typecheck
 npm test                          # unit tests, then browser tests
 ```
 
-`dist/` is the complete unpacked extension. `./try.sh` builds it and opens it in Chrome for Testing with a separate profile, for trying changes by hand.
+`dist/` is the complete unpacked extension. `./try.sh` builds it and opens it in Chrome for Testing with a separate profile, for trying changes by hand. Chrome caches an unpacked extension's service worker per version and reuses it across launches, so `./try.sh` deletes `.chrome-profile/Default/Service Worker` before each launch. If someone reports a change not taking effect in that browser, check it was relaunched with `./try.sh`.
 
 ## Conventions
 

@@ -4,7 +4,7 @@ A Chrome extension with shortcuts for creating tabs, reordering tabs and tab gro
 
 ## Loading from source
 
-To try the extension without installing it, run `./try.sh`. It builds the extension and opens it in Chrome for Testing (installed by Playwright) with its own profile, so it works even where your regular Chrome blocks unpacked extensions. Don't sign in to work accounts there. After changing the source, quit it and run `./try.sh` again. Shortcuts you bind there are kept in `.chrome-profile/`.
+To try the extension without installing it, run `./try.sh`. It builds the extension and opens it in Chrome for Testing (installed by Playwright) with its own profile, so it works even where your regular Chrome blocks unpacked extensions. Don't sign in to work accounts there. After changing the source, quit it (⌘Q) and run `./try.sh` again. `./try.sh` clears Chrome's cached copy of the background script each launch; without that, Chrome keeps running the old code until the version in `manifest.json` changes. Shortcuts you bind there are kept in `.chrome-profile/`.
 
 To load it into your regular Chrome instead:
 
@@ -33,8 +33,9 @@ Run `npm test`. The first time, also run `npx playwright install chromium`.
 
 Create a tab group titled `---` (collapse it so it takes little space). Any title made only of dashes works, like `-` or `—`, which helps since macOS turns `--` into `—` as you type. If there are several, the leftmost one counts. Tabs to its left are ones you keep. Tabs to its right are temporary:
 
-- "Open new tab after the --- tab group" opens a tab right after `---`. With no `---` group, it opens leftmost.
-- "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left. With no `---` group, it moves them leftmost.
+- "Open new tab after the --- tab group" opens a tab right after `---`.
+- "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left.
+- If there's no `---` group, both commands first create one at the far left: a collapsed group titled `———` holding a blank tab. That makes every existing tab "temporary", so if auto-close is on they can close after the set number of days.
 - Optionally, tabs to the right of `---` close automatically once they haven't been visited for some number of days. Pinned and active tabs, and tabs in any `---` group, never close. With no `---` group, nothing closes. This is off by default, see Settings.
 
 ## Settings

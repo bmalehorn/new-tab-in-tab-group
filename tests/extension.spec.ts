@@ -219,14 +219,16 @@ const cases: [command: string, before: string, after: string][] = [
 
   ["new-tab-after-separator", "a ---{x} b c*", "a ---{x} new* b c"],
   ["new-tab-after-separator", "a ---[x] [b c*]", "a ---[x] new* [b c]"],
-  ["new-tab-after-separator", "a b*", "new* a b"],
+  ["new-tab-after-separator", "a b*", "———{new} new* a b"],
+  ["new-tab-after-separator", "a* ———{x} b", "a ———{x} new* b"],
 
   ["move-across-separator", "a ---{x} b c*", "a c* ---{x} b"],
   ["move-across-separator", "a* b ---{x} c", "b ---{x} a* c"],
   ["move-across-separator", "a ---{x} [b c*]", "a c* ---{x} [b]"],
   ["move-across-separator", "a b+ ---{x} c d* e+", "a b+ d* e+ ---{x} c"],
   ["move-across-separator", "a+ b* c ---{x} d", "c ---{x} a+ b* d"],
-  ["move-across-separator", "a b c*", "c* a b"],
+  ["move-across-separator", "a b c*", "c* ———{new} a b"],
+  ["move-across-separator", "a+ b c*", "a+ c* ———{new} b"],
   ["move-across-separator", "a ---{x} b ---{y} c*", "a c* ---{x} b ---{y}"],
   ["move-across-separator", "a —{x} b*", "a b* —{x}"],
   ["new-tab-after-separator", "a* -[x] b", "a -[x] new* b"],
@@ -313,6 +315,13 @@ test("closes nothing without a --- group", async ({
   await tabs.setup("a [b] c*");
   await tabs.closeStaleTabs(8);
   expect(await tabs.layout()).toBe("a [b] c*");
+});
+
+test("creates only one separator", async ({ tabs }) => {
+  await tabs.setup("a*");
+  await tabs.run("new-tab-after-separator");
+  await tabs.run("new-tab-after-separator");
+  expect(await tabs.layout()).toBe("———{new} new* new a");
 });
 
 test("unknown commands throw", async ({ tabs }) => {

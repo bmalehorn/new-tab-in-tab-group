@@ -1,10 +1,14 @@
 // The first tab group titled with only dashes, like "---", splits the window:
 // tabs to its left are kept, tabs to its right are temporary. New tabs open
 // right after it, and temporary tabs can close after some days without a visit.
+// The commands that use it create one if it's missing.
 
 // Any dash-like characters count, since macOS turns "--" into "—" as you type.
 // \p{Pd} covers -, –, —, ― and friends; U+2212 is the minus sign.
 const SEPARATOR_TITLE = /^\s*[\p{Pd}\u2212]+\s*$/u;
+
+// Title for separators the extension creates.
+export const NEW_SEPARATOR_TITLE = "———";
 
 export const isSeparator = (tabGroup: { title?: string }) =>
   SEPARATOR_TITLE.test(tabGroup.title ?? "");
