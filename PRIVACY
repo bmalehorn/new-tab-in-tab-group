@@ -1,0 +1,9 @@
+# Privacy Policy
+
+Tab and Tab Group Shortcuts does not collect, store, or transmit any personal data.
+
+The extension uses the `tabs` and `tabGroups` permissions only to create, move, and focus tabs and tab groups in your browser when you press a keyboard shortcut. Nothing leaves your browser, and there are no analytics or tracking.
+
+The deploy tooling in this repository uses Google's Chrome Web Store API only to upload new versions of the extension on behalf of the developer. It does not access any user data.
+
+Questions: open an issue at https://github.com/bmalehorn/new-tab-in-tab-group/issues.
