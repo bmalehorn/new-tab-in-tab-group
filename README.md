@@ -4,11 +4,15 @@ A simple Chrome extension for opening tabs in the same tab group as the current 
 
 ## Loading from source
 
+Run `npm install && npm run build`. This compiles `src/background.ts` and puts the full extension in `dist/`.
+
 Go to `chrome://extensions`.
 
 Click "Load unpacked".
 
-Navigate to the `new-tab-in-tab-group` folder and click "Ok".
+Navigate to the `new-tab-in-tab-group/dist` folder and click "Ok".
+
+After changing the source, run `npm run build` again and click the reload icon on the extension.
 
 You're done! Press `⌘ Shift Y` to open tabs in the same tab group.
 
@@ -61,6 +65,6 @@ I think this only has to be run once to create an extension.
 
 Go to `chrome://extensions/`.
 Click "pack extension".
-Locate the `new-tab-in-tab-group` folder. It will create a .crx file and a .pem file.
+Run `npm run build`, then locate the `new-tab-in-tab-group/dist` folder. It will create a .crx file and a .pem file.
 
 Then, go to https://chrome.google.com/webstore/devconsole and upload the `new-tab-in-tab-group.crx` file just created.

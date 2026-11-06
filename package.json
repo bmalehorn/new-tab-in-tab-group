@@ -1,0 +1,12 @@
+{
+  "name": "new-tab-in-tab-group",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf dist && tsc && cp manifest.json icon.png dist/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.7",
+    "typescript": "^7.0.2"
+  }
+}

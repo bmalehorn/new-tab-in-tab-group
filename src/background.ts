@@ -64,6 +64,10 @@ chrome.commands.onCommand.addListener(async (command) => {
     currentWindow: true,
   });
   const currentTab = currentTabs[0];
+  if (currentTab?.id === undefined) {
+    return;
+  }
+  const currentTabId = currentTab.id;
 
   const tabs = await chrome.tabs.query({
     currentWindow: true,
@@ -71,7 +75,9 @@ chrome.commands.onCommand.addListener(async (command) => {
   const tabGroups = await chrome.tabGroups.query({});
 
   // skips collapsed tab groups
-  const getNextTab = (direction = 1) => {
+  const getNextTab = (
+    direction = 1
+  ): { nextTab?: chrome.tabs.Tab; skipped: boolean } => {
     let nextTabIndex = currentTab.index;
     let skipped = false;
     while (true) {
@@ -97,38 +103,41 @@ chrome.commands.onCommand.addListener(async (command) => {
     if (currentTab.groupId === -1) {
       return;
     }
+    if (newTab.id === undefined) {
+      return;
+    }
     await chrome.tabs.group({ tabIds: newTab.id, groupId: currentTab.groupId });
   } else if (command === "swap-right" || command === "swap-left") {
     const direction = command === "swap-right" ? 1 : -1;
     const { nextTab, skipped } = getNextTab(direction);
     if (!nextTab) {
-      await chrome.tabs.ungroup(currentTab.id);
+      await chrome.tabs.ungroup(currentTabId);
       if (skipped) {
         // if you skipped a collapsed tab group, I still want to swap to the far left / right
         if (direction === -1) {
-          await chrome.tabs.move(currentTab.id, { index: 0 });
+          await chrome.tabs.move(currentTabId, { index: 0 });
         } else {
-          await chrome.tabs.move(currentTab.id, { index: tabs.length });
+          await chrome.tabs.move(currentTabId, { index: tabs.length });
         }
       }
     } else if (currentTab.groupId === -1 && nextTab.groupId !== -1) {
       // Only change this tab to the same group as the next tab.
       // This way, you can position the tab at the start of the tab group.
       await chrome.tabs.group({
-        tabIds: currentTab.id,
+        tabIds: currentTabId,
         groupId: nextTab.groupId,
       });
     } else if (currentTab.groupId !== nextTab.groupId) {
-      await chrome.tabs.ungroup(currentTab.id);
+      await chrome.tabs.ungroup(currentTabId);
     } else if (skipped) {
       // for some reason, this was skipping over 1 extra tab each time.
       // Undo this by subtracting the direction.
-      await chrome.tabs.move(currentTab.id, {
+      await chrome.tabs.move(currentTabId, {
         index: nextTab.index - direction,
       });
     } else {
       // Swap the tab with the next tab.
-      await chrome.tabs.move(currentTab.id, { index: nextTab.index });
+      await chrome.tabs.move(currentTabId, { index: nextTab.index });
     }
   } else if (
     command === "focus-right-into-group" ||
@@ -136,7 +145,7 @@ chrome.commands.onCommand.addListener(async (command) => {
   ) {
     const direction = command === "focus-right-into-group" ? 1 : -1;
     const { nextTab } = getNextTab(direction);
-    if (!nextTab) {
+    if (nextTab?.id === undefined) {
       return;
     }
     await chrome.tabs.update(nextTab.id, { active: true });
