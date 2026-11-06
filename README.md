@@ -48,15 +48,16 @@ Go to `chrome://extensions`, click Details on "Tab and Tab Group Shortcuts", the
 
 Only `⌘ Shift Y` is set automatically, and only on a fresh install. Suggested bindings:
 
-| Shortcut      | Command                                                     |
-| ------------- | ----------------------------------------------------------- |
-| `⌘ Shift Y`   | Open New Tab in Group                                       |
-| `⌘T`          | Open new tab after the --- tab group                        |
-| `⌘D`          | Move selected tabs to the other side of the --- tab group   |
-| `⌘ Shift ↑`   | Swap tab to the left                                        |
-| `⌘ Shift ↓`   | Swap tab to the right                                       |
-| `⌘ Shift ,`   | Move focus to the tab on the left, wrapping around          |
-| `⌘ Shift .`   | Move focus to the tab on the right, wrapping around         |
+| Shortcut    | Command                                                   |
+| ----------- | --------------------------------------------------------- |
+| `⌘ Shift Y` | Open New Tab in Group                                     |
+| `⌘T`        | Open new tab after the --- tab group                      |
+| `⌘D`        | Move selected tabs to the other side of the --- tab group |
+| `⌘ Shift ↑` | Swap tab to the left                                      |
+| `⌘ Shift ↓` | Swap tab to the right                                     |
+| `⌘ Shift ,` | Move focus to the tab on the left, wrapping around        |
+| `⌘ Shift .` | Move focus to the tab on the right, wrapping around       |
+| `⌘ Shift C` | Copy the current tab's URL                                |
 
 To bind a shortcut:
 
@@ -65,6 +66,8 @@ To bind a shortcut:
 3. Click the ✎ icon next to the command and press the keys, e.g. `⌘T`.
 
 If a key is already bound to another command of this extension, remove it from that command first.
+
+"Copy the current tab's URL" needs permission to write to the clipboard. Chrome asks the first time you use it; you can also allow it on the Settings page. `⌘ Shift C` replaces DevTools' "inspect element" shortcut while DevTools is closed; pick another key if you use that.
 
 Chrome's own previous / next tab shortcuts (`⌘ Shift [` / `⌘ Shift ]` and `⌘ Option ←` / `⌘ Option →`) can't be taken over. Extension shortcuts can't use brackets or combine `⌘` with `Option`. The "Move focus ... wrapping around" commands work like Chrome's but skip collapsed groups, and `⌘ Shift ,` / `⌘ Shift .` is the closest available pair.
 
