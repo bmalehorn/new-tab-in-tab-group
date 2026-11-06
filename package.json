@@ -2,7 +2,7 @@
   "name": "new-tab-in-tab-group",
   "private": true,
   "scripts": {
-    "build": "rm -rf dist && tsc && cp manifest.json icon.png src/options.html dist/",
+    "build": "rm -rf dist && tsc && cp manifest.json icon.png src/options.html src/offscreen.html dist/",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit && npm run test:browser",
     "test:unit": "node --test 'src/**/*.test.ts'",
