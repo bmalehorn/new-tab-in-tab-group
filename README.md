@@ -57,32 +57,58 @@ Chrome only applies default shortcuts on a fresh install, and never for keys Chr
 
 If a key is already bound to another command of this extension, remove it from that command first.
 
-## Automated deploys
+## Releasing
 
-Bump `"version"` in `manifest.json`, then run `./deploy.sh`. It packages the zip, uploads it with the [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api), and submits it for review. `./deploy.sh --status` prints the store's current state. The store won't take a new upload while a version is in review; `./deploy.sh --cancel` withdraws that submission.
+Releases go to the [Chrome Web Store listing](https://chromewebstore.google.com/detail/nnbnphmhdbcgnekonlgniafbpcpapkep) with `./deploy.sh`, which uses the [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api).
 
-One-time setup, which puts credentials in the untracked `.deploy.env`:
+1. Bump `"version"` in `manifest.json`. The store rejects a version it already has.
+2. Run `./deploy.sh`. It runs `npm test`, builds the zip with `./package.sh`, uploads it, and submits it for review. Success looks like:
+
+   ```
+   "state": "PENDING_REVIEW"
+   Submitted 1.0.9 for review.
+   ```
+
+3. Wait for review, usually under a day. Google emails you when it's approved or rejected. Approved versions publish automatically.
+4. Commit and push the version bump.
+
+Other commands:
+
+- `./deploy.sh --status` prints the published and in-review versions. Use it to check on a review, or to check your credentials work.
+- `./deploy.sh --cancel` withdraws the version that's in review. You need this to replace it, because uploads fail while a version is in review:
+
+  ```
+  "message": "You may not edit or publish an item that is in review."
+  ```
+
+### One-time credential setup
+
+`./deploy.sh` reads credentials from `.deploy.env`, which is untracked. If it's missing, `./deploy.sh` says so. To create it:
 
 1. Go to https://console.cloud.google.com/projectcreate and create a project (e.g. `chrome-webstore-deploy`).
 2. Go to https://console.cloud.google.com/apis/library/chromewebstore.googleapis.com and click Enable.
-3. Go to https://console.cloud.google.com/auth/overview, configure the consent screen as External, and add your Google account under Audience > Test users.
-4. Go to https://console.cloud.google.com/auth/clients and create an OAuth client of type "Web application", with authorized redirect URI `https://developers.google.com/oauthplayground`. Copy the client ID and secret.
-5. Go to https://developers.google.com/oauthplayground. Click the gear icon, check "Use your own OAuth credentials", and paste the client ID and secret.
-6. In "Input your own scopes", enter `https://www.googleapis.com/auth/chromewebstore` and click Authorize APIs. Sign in as the account that owns the extension. Click "Exchange authorization code for tokens" and copy the refresh token.
-7. Go to https://chrome.google.com/webstore/devconsole. Your publisher ID is under Account / Publisher settings.
-8. Create `.deploy.env`:
+3. Go to https://console.cloud.google.com/auth/overview and configure the consent screen as External. Fill in the branding; the privacy and terms links can point at [PRIVACY](PRIVACY) and [TERMS](TERMS), with `github.com` as the authorized domain.
+4. Go to https://console.cloud.google.com/auth/audience and click "Publish app". Otherwise sign-in fails with "Error 403: access_denied" for anyone not listed as a test user, and refresh tokens expire after 7 days.
+5. Go to https://console.cloud.google.com/auth/clients and create an OAuth client of type "Web application", with authorized redirect URI `https://developers.google.com/oauthplayground`. Copy the client ID and secret.
+6. Go to https://developers.google.com/oauthplayground. Click the gear icon, check "Use your own OAuth credentials", and paste the client ID and secret.
+7. In "Input your own scopes", enter `https://www.googleapis.com/auth/chromewebstore` and click Authorize APIs. Sign in as the account that owns the extension. When it says "Google hasn't verified this app", click Advanced, then "Go to ... (unsafe)", then Continue.
+8. Click "Exchange authorization code for tokens" and copy the refresh token.
+9. Go to https://chrome.google.com/webstore/devconsole. Your publisher ID is under Account / Publisher settings.
+10. Create `.deploy.env`:
 
-   ```bash
-   CWS_CLIENT_ID=...
-   CWS_CLIENT_SECRET=...
-   CWS_REFRESH_TOKEN=...
-   CWS_PUBLISHER_ID=...
-   CWS_EXTENSION_ID=nnbnphmhdbcgnekonlgniafbpcpapkep
-   ```
+    ```bash
+    CWS_CLIENT_ID=...
+    CWS_CLIENT_SECRET=...
+    CWS_REFRESH_TOKEN=...
+    CWS_PUBLISHER_ID=...
+    CWS_EXTENSION_ID=nnbnphmhdbcgnekonlgniafbpcpapkep
+    ```
 
-> If the consent screen stays in "Testing" mode, the refresh token expires after 7 days. Click "Publish app" on the consent screen page to avoid that (no verification needed for personal use).
+11. Run `./deploy.sh --status`. If it prints the published version, you're done.
 
 ## Releasing manually
+
+If `./deploy.sh` doesn't work, you can upload by hand.
 
 Run `./package.sh`.
 Go to https://chrome.google.com/webstore/devconsole.
