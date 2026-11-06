@@ -32,6 +32,7 @@ npm test                          # unit tests, then browser tests
 - A new file that the extension loads directly, like an HTML page, must be added to the `cp` in the `build` script in `package.json`.
 - Keep dependencies to dev tooling only (`typescript`, `@types/chrome`, `@playwright/test`). The extension ships no third-party code.
 - Don't add the `tabs` permission. `chrome.tabs` works without it; it only unlocks reading a tab's `url`, `pendingUrl`, `title` and `favIconUrl`, which this extension doesn't need. Requesting it anyway got 1.0.8 rejected as "Purple Potassium" (requesting but not using a permission).
+- Create tabs with `createTab` in `background.ts`, not `chrome.tabs.create`. The `tabs.onCreated` listener moves new tabs to after the separator, and `createTab` is how it knows to leave the extension's own tabs alone.
 - `clipboardWrite` is in `optional_permissions` and requested on first use of `copy-url`, because a new permission with a warning disables the extension for existing users until they accept it. Use optional permissions the same way for any future permission with a warning. `permissions.request` must run during the shortcut's user gesture, before any `await`.
 - New permissions can trigger a warning to users and a slower store review. Prefer ones with no warning, and mention any new permission in the commit message. Before releasing, the user has to justify each new permission in the Developer Dashboard's Privacy practices tab, or publishing fails with `INVALID_ITEM_METADATA`.
 - Comments explain why, not what.
@@ -52,7 +53,7 @@ Each test case describes tab layouts as strings:
 - `*` marks the active tab and `+` other selected tabs.
 - Tabs the extension creates show up as `new`.
 
-Every test starts from a fresh set of tabs and default settings. Run `npx playwright test --headed` to watch.
+Every test starts from a fresh set of tabs and default settings, except that moving new tabs after the separator is off (because `setup()` creates tabs). The "new tab opened from" tests turn it on. Run `npx playwright test --headed` to watch.
 
 When adding a test, check it fails without the fix. Chrome's tab APIs have off-by-one surprises around group edges and collapsed groups, which is why these tests use a real browser instead of mocks.
 

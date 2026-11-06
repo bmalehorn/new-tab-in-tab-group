@@ -53,7 +53,12 @@ const test = base.extend<
   ],
   tabs: async ({ serviceWorker }, use) => {
     // Settings persist for the whole browser, so start each test from defaults.
-    await serviceWorker.evaluate(() => chrome.storage.sync.clear());
+    // Moving new tabs is turned off because setup() creates tabs; the tests
+    // for that feature turn it back on.
+    await serviceWorker.evaluate(async () => {
+      await chrome.storage.sync.clear();
+      await chrome.storage.sync.set({ openNewTabsAfterSeparator: false });
+    });
     await use(new Tabs(serviceWorker));
   },
 });
@@ -62,6 +67,14 @@ class Tabs {
   private names = new Map<number, string>();
 
   constructor(private serviceWorker: Worker) {}
+
+  idOf(name: string) {
+    const entry = [...this.names].find(([, other]) => other === name);
+    if (!entry) {
+      throw new Error(`no tab named ${name}`);
+    }
+    return entry[0];
+  }
 
   // Replaces every tab in the window with the given layout.
   async setup(layout: string) {
@@ -323,6 +336,38 @@ test("creates only one separator", async ({ tabs }) => {
   await tabs.run("new-tab-after-separator");
   expect(await tabs.layout()).toBe("———{new} new* new a");
 });
+
+// Opens a background tab the way a link would, from the tab named `opener`,
+// or from outside the window if there's none.
+const openTab = async (tabs: Tabs, serviceWorker: Worker, opener?: string) => {
+  const openerTabId = opener ? tabs.idOf(opener) : undefined;
+  await serviceWorker.evaluate(async (openerTabId) => {
+    await chrome.storage.sync.set({ openNewTabsAfterSeparator: true });
+    await chrome.tabs.create({ url: "about:blank", openerTabId, active: false });
+  }, openerTabId);
+};
+
+const newTabCases: [opener: string | undefined, before: string, after: string][] = [
+  [undefined, "a* ---{x} b c", "a* ---{x} new b c"],
+  ["a", "a* ---{x} b", "a* ---{x} new b"],
+  ["a", "[a*] ---{x} b", "[a*] ---{x} new b"],
+  ["b", "a ---{x} b* c", "a ---{x} b* c new"],
+  [undefined, "a* b c", "a* b c new"],
+];
+
+for (const [opener, before, after] of newTabCases) {
+  test(`new tab opened from ${opener ?? "outside"}: ${before} -> ${after}`, async ({
+    tabs,
+    serviceWorker,
+  }) => {
+    await tabs.setup(before);
+    await openTab(tabs, serviceWorker, opener);
+    await expect.poll(() => tabs.layout()).toBe(after);
+    // Make sure it stays there, for the cases where nothing should move.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(await tabs.layout()).toBe(after);
+  });
+}
 
 test("unknown commands throw", async ({ tabs }) => {
   await tabs.setup("a*");

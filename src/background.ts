@@ -3,6 +3,7 @@ import {
   findSeparator,
   findStaleTabs,
   NEW_SEPARATOR_TITLE,
+  shouldMoveNewTab,
 } from "./separator.ts";
 import { getSettings } from "./settings.ts";
 
@@ -83,7 +84,7 @@ export const handleCommand = async (command: string) => {
   const tabGroups = await chrome.tabGroups.query({});
 
   if (command === "new-tab-in-group") {
-    const newTab = await chrome.tabs.create({ index: currentTab.index + 1 });
+    const newTab = await createTab({ index: currentTab.index + 1 });
     // no current group
     if (currentTab.groupId === -1) {
       return;
@@ -156,6 +157,22 @@ export const handleCommand = async (command: string) => {
   }
 };
 
+// Tabs this extension creates are already where they belong, so the
+// tabs.onCreated listener below leaves them alone. onCreated can fire before
+// tabs.create resolves, so the listener waits for pending creates to finish.
+const extensionTabIds = new Set<number>();
+let pendingCreates: Promise<unknown> = Promise.resolve();
+const createTab = (properties: chrome.tabs.CreateProperties) => {
+  const created = chrome.tabs.create(properties).then((tab) => {
+    if (tab.id !== undefined) {
+      extensionTabIds.add(tab.id);
+    }
+    return tab;
+  });
+  pendingCreates = Promise.all([pendingCreates, created]);
+  return created;
+};
+
 // Pinned tabs always come first, so "leftmost" means right after them.
 const firstUnpinnedIndex = (tabs: chrome.tabs.Tab[]) =>
   tabs.filter((tab) => tab.pinned).length;
@@ -171,7 +188,7 @@ const ensureSeparator = async (
   if (separator) {
     return { separator, tabs };
   }
-  const placeholder = await chrome.tabs.create({
+  const placeholder = await createTab({
     url: "about:blank",
     index: firstUnpinnedIndex(tabs),
     active: false,
@@ -192,7 +209,7 @@ const newTabAfterSeparator = async (
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
   const { separator } = await ensureSeparator(tabs, tabGroups);
-  const newTab = await chrome.tabs.create({ index: separator.end + 1 });
+  const newTab = await createTab({ index: separator.end + 1 });
   // A tab created at the edge of a group can land inside it.
   if (newTab.id !== undefined && newTab.groupId !== -1) {
     await chrome.tabs.ungroup(newTab.id);
@@ -333,6 +350,44 @@ chrome.commands.onCommand.addListener((command, tab) => {
     handleCommand(command);
   }
 });
+
+// When Chrome starts, session restore recreates every tab, which must not be
+// moved. Ignore new tabs for a little while after startup.
+const STARTUP_GRACE_MS = 15_000;
+chrome.runtime.onStartup.addListener(() =>
+  chrome.storage.session.set({ startedAt: Date.now() })
+);
+const isStartingUp = async () => {
+  const { startedAt } = await chrome.storage.session.get("startedAt");
+  return typeof startedAt === "number" && Date.now() - startedAt < STARTUP_GRACE_MS;
+};
+
+export const moveNewTab = async (tab: chrome.tabs.Tab) => {
+  await pendingCreates;
+  if (tab.id === undefined || extensionTabIds.delete(tab.id)) {
+    return;
+  }
+  if (!(await getSettings()).openNewTabsAfterSeparator || (await isStartingUp())) {
+    return;
+  }
+  const tabs = await chrome.tabs.query({ windowId: tab.windowId });
+  const tabGroups = await chrome.tabGroups.query({ windowId: tab.windowId });
+  // The tab may have moved since the event, so use its current state.
+  const current = tabs.find((other) => other.id === tab.id);
+  if (!current || !shouldMoveNewTab(current, tabs, tabGroups)) {
+    return;
+  }
+  const separator = findSeparator(tabs, tabGroups)!;
+  if (current.groupId !== -1) {
+    await chrome.tabs.ungroup(tab.id);
+  }
+  const separatorTabs = await chrome.tabs.query({ groupId: separator.groupId });
+  const end = Math.max(...separatorTabs.map((separatorTab) => separatorTab.index));
+  const { index } = await chrome.tabs.get(tab.id);
+  // If the tab is left of the separator, removing it shifts the separator left.
+  await chrome.tabs.move(tab.id, { index: index < end ? end : end + 1 });
+};
+chrome.tabs.onCreated.addListener(moveNewTab);
 
 const CLOSE_STALE_TABS_ALARM = "close-stale-tabs";
 chrome.alarms.onAlarm.addListener((alarm) => {

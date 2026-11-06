@@ -5,10 +5,13 @@ export type Settings = {
   // Close tabs right of the separator after this many days without a visit.
   // 0 turns auto-close off.
   autoCloseAfterDays: number;
+  // Move newly opened tabs to right after the separator. See shouldMoveNewTab.
+  openNewTabsAfterSeparator: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   autoCloseAfterDays: 0,
+  openNewTabsAfterSeparator: true,
 };
 
 export const getSettings = async (): Promise<Settings> =>

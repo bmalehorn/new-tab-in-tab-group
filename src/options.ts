@@ -4,7 +4,17 @@ const autoCloseAfterDays = document.getElementById(
   "autoCloseAfterDays"
 ) as HTMLInputElement;
 
-const days = (await getSettings()).autoCloseAfterDays;
+const openNewTabsAfterSeparator = document.getElementById(
+  "openNewTabsAfterSeparator"
+) as HTMLInputElement;
+
+const settings = await getSettings();
+openNewTabsAfterSeparator.checked = settings.openNewTabsAfterSeparator;
+openNewTabsAfterSeparator.addEventListener("change", () =>
+  setSettings({ openNewTabsAfterSeparator: openNewTabsAfterSeparator.checked })
+);
+
+const days = settings.autoCloseAfterDays;
 autoCloseAfterDays.value = days > 0 ? String(days) : "";
 autoCloseAfterDays.addEventListener("input", () => {
   const value = autoCloseAfterDays.valueAsNumber;

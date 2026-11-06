@@ -37,6 +37,35 @@ export const findSeparator = (
   };
 };
 
+// Whether a tab that was just opened should move to right after the separator:
+// tabs opened from outside the window (another app, another window, the +
+// button) or from a pinned tab or a tab left of the separator. Tabs opened
+// from a tab right of the separator stay where Chrome put them.
+export const shouldMoveNewTab = <
+  T extends Tab & { id?: number; pinned: boolean; openerTabId?: number }
+>(
+  tab: T,
+  tabs: T[],
+  tabGroups: { id: number; title?: string }[]
+): boolean => {
+  const separator = findSeparator(tabs, tabGroups);
+  if (!separator || tab.pinned) {
+    return false;
+  }
+  if (tab.index === separator.end + 1 && tab.groupId === -1) {
+    return false;
+  }
+  const opener = tabs.find((other) => other.id === tab.openerTabId);
+  if (!opener) {
+    return true;
+  }
+  return (
+    opener.pinned ||
+    opener.index < separator.start ||
+    opener.groupId === separator.groupId
+  );
+};
+
 // Tabs to the right of the separator that haven't been visited in `maxAgeMs`.
 // Active and pinned tabs, and tabs in any separator group, are never stale.
 export const findStaleTabs = <

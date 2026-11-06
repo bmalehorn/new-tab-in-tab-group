@@ -5,6 +5,7 @@ import {
   findStaleTabs,
   isSeparator,
   NEW_SEPARATOR_TITLE,
+  shouldMoveNewTab,
 } from "./separator.ts";
 
 const UNGROUPED = -1;
@@ -42,6 +43,33 @@ test("findSeparator ignores --- groups in other windows", () => {
   // Group 2 exists, but none of these tabs are in it.
   const tabs = [{ index: 0, groupId: UNGROUPED }];
   assert.equal(findSeparator(tabs, tabGroups), undefined);
+});
+
+test("shouldMoveNewTab moves tabs opened from outside or left of ---", () => {
+  // pinned | a | --- | b | new
+  const tabs = [
+    { id: 10, index: 0, groupId: UNGROUPED, pinned: true },
+    { id: 11, index: 1, groupId: UNGROUPED, pinned: false },
+    { id: 12, index: 2, groupId: 2, pinned: false },
+    { id: 13, index: 3, groupId: UNGROUPED, pinned: false },
+  ];
+  const opened = (openerTabId?: number, extra = {}) => {
+    const tab = { id: 99, index: 4, groupId: UNGROUPED, pinned: false, openerTabId, ...extra };
+    return shouldMoveNewTab(tab, [...tabs, tab], tabGroups);
+  };
+  assert.equal(opened(undefined), true, "no opener");
+  assert.equal(opened(42), true, "opener in another window");
+  assert.equal(opened(10), true, "opened from a pinned tab");
+  assert.equal(opened(11), true, "opened from left of ---");
+  assert.equal(opened(12), true, "opened from the --- group");
+  assert.equal(opened(13), false, "opened from right of ---");
+  assert.equal(opened(undefined, { pinned: true }), false, "new tab is pinned");
+  assert.equal(opened(undefined, { index: 3 }), false, "already right after ---");
+});
+
+test("shouldMoveNewTab does nothing without a separator", () => {
+  const tab = { id: 1, index: 0, groupId: UNGROUPED, pinned: false };
+  assert.equal(shouldMoveNewTab(tab, [tab], tabGroups), false);
 });
 
 const now = 1_000_000_000_000;
