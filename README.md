@@ -73,6 +73,7 @@ Chrome's own previous / next tab shortcuts (`⌘ Shift [` / `⌘ Shift ]` and `�
 Releases go to the [Chrome Web Store listing](https://chromewebstore.google.com/detail/nnbnphmhdbcgnekonlgniafbpcpapkep) with `./deploy.sh`, which uses the [Chrome Web Store API](https://developer.chrome.com/docs/webstore/using-api).
 
 1. Bump `"version"` in `manifest.json`. The store rejects a version it already has.
+   If you added a permission to `manifest.json`, first explain why it's needed in the [Developer Dashboard](https://chrome.google.com/webstore/devconsole), under Privacy practices. Otherwise publishing fails with `INVALID_ITEM_METADATA`.
 2. Run `./deploy.sh`. It runs `npm test`, builds the zip with `./package.sh`, uploads it, and submits it for review. Success looks like:
 
    ```
