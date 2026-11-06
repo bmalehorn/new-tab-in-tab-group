@@ -4,6 +4,10 @@ A Chrome extension with shortcuts for creating tabs, reordering tabs and tab gro
 
 ## Loading from source
 
+To try the extension without installing it, run `./try.sh`. It builds the extension and opens it in Chrome for Testing (installed by Playwright) with its own profile, so it works even where your regular Chrome blocks unpacked extensions. Don't sign in to work accounts there. After changing the source, quit it and run `./try.sh` again. Shortcuts you bind there are kept in `.chrome-profile/`.
+
+To load it into your regular Chrome instead:
+
 Run `npm install && npm run build`. This compiles `src/background.ts` and puts the full extension in `dist/`.
 
 Go to `chrome://extensions`.

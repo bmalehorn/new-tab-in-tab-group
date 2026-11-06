@@ -22,7 +22,7 @@ npm run typecheck
 npm test                          # unit tests, then browser tests
 ```
 
-`dist/` is the complete unpacked extension. Load it from `chrome://extensions` with "Load unpacked" to try changes by hand.
+`dist/` is the complete unpacked extension. `./try.sh` builds it and opens it in Chrome for Testing with a separate profile, for trying changes by hand.
 
 ## Conventions
 
