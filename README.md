@@ -1,6 +1,6 @@
 # New Tab in Tab Group
 
-A simple Chrome extension for opening tabs in the same tab group as the current tab.
+A Chrome extension with shortcuts for creating tabs, reordering tabs and tab groups, and closing old tabs.
 
 ## Loading from source
 
@@ -25,13 +25,31 @@ Run `npm test`. The first time, also run `npx playwright install chromium`.
 
 `./deploy.sh` runs the tests before uploading.
 
-## Mapping to ⌘T
+## The `---` separator
 
-Go to `chrome://extensions/shortcuts`.
+Create a tab group titled `---` (collapse it so it takes little space). Tabs to its left are ones you keep. Tabs to its right are temporary:
 
-Under the "New Tab in Group" extension, in the "Open New Tab in Tab Group" shortcut, click the ✎ icon.
+- "Open new tab after the --- tab group" opens a tab right after `---`. With no `---` group, it opens leftmost.
+- "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left. With no `---` group, it moves them leftmost.
+- Tabs to the right of `---` close automatically once they haven't been visited for 7 days. Pinned and active tabs never close. With no `---` group, nothing closes.
 
-Press `⌘T`. You're done!
+## Shortcuts
+
+| Shortcut      | Command                                                    | Set automatically? |
+| ------------- | ---------------------------------------------------------- | ------------------ |
+| `⌘ Shift Y`   | Open New Tab in Group                                      | Yes                |
+| `⌘ Shift ↑`   | Swap tab to the left                                       | Yes                |
+| `⌘ Shift ↓`   | Swap tab to the right                                      | Yes                |
+| `⌘T`          | Open new tab after the --- tab group                       | No                 |
+| `⌘D`          | Move selected tabs to the other side of the --- tab group  | No                 |
+
+Chrome only applies default shortcuts on a fresh install, and never for keys Chrome itself uses like `⌘T` and `⌘D`. To bind any shortcut by hand:
+
+1. Go to `chrome://extensions/shortcuts`.
+2. Find the "Tab and Tab Group Shortcuts" extension.
+3. Click the ✎ icon next to the command and press the keys, e.g. `⌘T`.
+
+If a key is already bound to another command of this extension, remove it from that command first.
 
 ## Automated deploys
 
