@@ -3,7 +3,7 @@
   "description": "Adds shortcuts for creating tabs, reorganizing tabs, and moving the focus.",
   "version": "1.0.10",
   "manifest_version": 3,
-  "permissions": ["tabGroups", "alarms", "storage", "activeTab", "offscreen"],
+  "permissions": ["tabGroups", "alarms", "storage"],
   "options_ui": {
     "page": "options.html"
   },
@@ -42,13 +42,9 @@
     },
     "move-across-separator": {
       "description": "Move selected tabs to the other side of the --- tab group"
-    },
-    "copy-url": {
-      "description": "Copy the current tab's URL"
     }
   },
   "icons": {
     "128": "icon.png"
-  },
-  "optional_permissions": ["clipboardWrite"]
+  }
 }

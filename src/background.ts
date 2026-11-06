@@ -270,69 +270,7 @@ export const closeStaleTabs = async (now = Date.now()) => {
   }
 };
 
-const CLIPBOARD_PERMISSION: chrome.permissions.Permissions = {
-  permissions: ["clipboardWrite"],
-};
-
-// clipboardWrite is optional so that updating doesn't disable the extension
-// for existing users until they accept a new permission warning. Track whether
-// it's granted, so copyUrl can ask for it before awaiting anything:
-// permissions.request only works during the key press's user gesture.
-let canCopy = false;
-const updateCanCopy = async () => {
-  canCopy = await chrome.permissions.contains(CLIPBOARD_PERMISSION);
-};
-updateCanCopy();
-chrome.permissions.onAdded.addListener(updateCanCopy);
-chrome.permissions.onRemoved.addListener(updateCanCopy);
-
-const copyToClipboard = async (text: string) => {
-  if (!(await chrome.offscreen.hasDocument())) {
-    await chrome.offscreen.createDocument({
-      url: "offscreen.html",
-      reasons: [chrome.offscreen.Reason.CLIPBOARD],
-      justification: "Copy the current tab's URL",
-    });
-  }
-  const copied = await chrome.runtime.sendMessage({
-    target: "offscreen",
-    type: "copy",
-    text,
-  });
-  if (!copied) {
-    throw new Error("copying to the clipboard failed");
-  }
-};
-
-// `tab` comes from the command event. Its url is only set because pressing
-// the shortcut grants activeTab.
-export const copyUrl = async (tab?: chrome.tabs.Tab) => {
-  const url = tab?.url;
-  if (!url) {
-    return;
-  }
-  if (!canCopy) {
-    try {
-      if (!(await chrome.permissions.request(CLIPBOARD_PERMISSION))) {
-        return;
-      }
-    } catch {
-      // Not in a user gesture. The options page has a button to allow it.
-      await chrome.runtime.openOptionsPage();
-      return;
-    }
-    canCopy = true;
-  }
-  await copyToClipboard(url);
-};
-
-chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === "copy-url") {
-    copyUrl(tab);
-  } else {
-    handleCommand(command);
-  }
-});
+chrome.commands.onCommand.addListener(handleCommand);
 
 const CLOSE_STALE_TABS_ALARM = "close-stale-tabs";
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -351,4 +289,4 @@ chrome.alarms.get(CLOSE_STALE_TABS_ALARM).then((alarm) => {
 // Keyboard shortcuts can't be pressed from automated tests, and the tests
 // can't wait a week, so the browser tests call these directly from the service
 // worker. See tests/extension.spec.ts.
-Object.assign(globalThis, { handleCommand, closeStaleTabs, copyUrl });
+Object.assign(globalThis, { handleCommand, closeStaleTabs });
