@@ -2,6 +2,15 @@
 
 Chrome extension (Manifest V3) that adds keyboard shortcuts for tabs and tab groups. Published on the Chrome Web Store as `nnbnphmhdbcgnekonlgniafbpcpapkep`. See README.md for what each feature does.
 
+## Existing users
+
+This extension is published and people already use it. Updates must not change how it behaves for them:
+
+- New behavior that happens without a shortcut (like moving or closing tabs on its own) is a setting, off by default.
+- New commands have no default shortcut (`suggested_key`). Users bind them in `chrome://extensions/shortcuts`.
+- Don't change existing commands' behavior or default shortcuts.
+- A new permission with a warning disables the extension for existing users until they accept it. Use `optional_permissions` and request it when the feature is first used.
+
 ## Layout
 
 - `src/background.ts`: service worker. `handleCommand` runs each keyboard command; `closeStaleTabs` runs hourly from a `chrome.alarms` alarm.
@@ -53,7 +62,7 @@ Each test case describes tab layouts as strings:
 - `*` marks the active tab and `+` other selected tabs.
 - Tabs the extension creates show up as `new`.
 
-Every test starts from a fresh set of tabs and default settings, except that moving new tabs after the separator is off (because `setup()` creates tabs). The "new tab opened from" tests turn it on. Run `npx playwright test --headed` to watch.
+Every test starts from a fresh set of tabs and default settings. The "new tab opened from" tests turn on moving new tabs after the separator. Run `npx playwright test --headed` to watch.
 
 When adding a test, check it fails without the fix. Chrome's tab APIs have off-by-one surprises around group edges and collapsed groups, which is why these tests use a real browser instead of mocks.
 

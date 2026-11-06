@@ -53,12 +53,7 @@ const test = base.extend<
   ],
   tabs: async ({ serviceWorker }, use) => {
     // Settings persist for the whole browser, so start each test from defaults.
-    // Moving new tabs is turned off because setup() creates tabs; the tests
-    // for that feature turn it back on.
-    await serviceWorker.evaluate(async () => {
-      await chrome.storage.sync.clear();
-      await chrome.storage.sync.set({ openNewTabsAfterSeparator: false });
-    });
+    await serviceWorker.evaluate(() => chrome.storage.sync.clear());
     await use(new Tabs(serviceWorker));
   },
 });
@@ -368,6 +363,13 @@ for (const [opener, before, after] of newTabCases) {
     expect(await tabs.layout()).toBe(after);
   });
 }
+
+test("new tabs aren't moved by default", async ({ tabs, serviceWorker }) => {
+  await tabs.setup("a* ---{x} b");
+  await serviceWorker.evaluate(() => chrome.tabs.create({ url: "about:blank", active: false }));
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(await tabs.layout()).toBe("a* ---{x} b new");
+});
 
 test("unknown commands throw", async ({ tabs }) => {
   await tabs.setup("a*");

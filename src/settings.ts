@@ -11,7 +11,7 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   autoCloseAfterDays: 0,
-  openNewTabsAfterSeparator: true,
+  openNewTabsAfterSeparator: false,
 };
 
 export const getSettings = async (): Promise<Settings> =>

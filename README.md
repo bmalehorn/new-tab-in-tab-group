@@ -33,7 +33,7 @@ Run `npm test`. The first time, also run `npx playwright install chromium`.
 
 Create a tab group titled `---` (collapse it so it takes little space). Any title made only of dashes works, like `-` or `—`, which helps since macOS turns `--` into `—` as you type. If there are several, the leftmost one counts. Tabs to its left are ones you keep. Tabs to its right are temporary:
 
-- Newly opened tabs move to right after `---`: links from other apps or windows, the + button, and links opened from pinned tabs or tabs left of `---`. Links opened from tabs right of `---` stay where Chrome puts them. Turn this off in Settings.
+- Newly opened tabs move to right after `---`: links from other apps or windows, the + button, and links opened from pinned tabs or tabs left of `---`. Links opened from tabs right of `---` stay where Chrome puts them. Off by default, turn it on in Settings.
 - "Open new tab after the --- tab group" opens a tab right after `---`.
 - "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left.
 - If there's no `---` group, both commands first create one at the far left: a collapsed group titled `———` holding a blank tab. That makes every existing tab "temporary", so if auto-close is on they can close after the set number of days.
@@ -43,7 +43,7 @@ Create a tab group titled `---` (collapse it so it takes little space). Any titl
 
 Go to `chrome://extensions`, click Details on "Tab and Tab Group Shortcuts", then click "Extension options". Or right-click the extension's icon in the toolbar and click Options.
 
-- "Move newly opened tabs to right after the `---` tab group": on by default.
+- "Move newly opened tabs to right after the `---` tab group": off by default.
 - "Close tabs to the right of the `---` tab group after N days without a visit": empty by default, which means off. 0 also means off.
 
 ## Shortcuts
