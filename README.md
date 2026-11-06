@@ -31,7 +31,13 @@ Create a tab group titled `---` (collapse it so it takes little space). Tabs to 
 
 - "Open new tab after the --- tab group" opens a tab right after `---`. With no `---` group, it opens leftmost.
 - "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left. With no `---` group, it moves them leftmost.
-- Tabs to the right of `---` close automatically once they haven't been visited for 7 days. Pinned and active tabs never close. With no `---` group, nothing closes.
+- Optionally, tabs to the right of `---` close automatically once they haven't been visited for 7 days. Pinned and active tabs never close. With no `---` group, nothing closes. This is off by default, see Settings.
+
+## Settings
+
+Go to `chrome://extensions`, click Details on "Tab and Tab Group Shortcuts", then click "Extension options". Or right-click the extension's icon in the toolbar and click Options.
+
+- "Close tabs to the right of the `---` tab group after 7 days without a visit": off by default.
 
 ## Shortcuts
 

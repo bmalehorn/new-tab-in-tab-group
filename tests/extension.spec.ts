@@ -52,6 +52,8 @@ const test = base.extend<
     { scope: "worker" },
   ],
   tabs: async ({ serviceWorker }, use) => {
+    // Settings persist for the whole browser, so start each test from defaults.
+    await serviceWorker.evaluate(() => chrome.storage.sync.clear());
     await use(new Tabs(serviceWorker));
   },
 });
@@ -230,7 +232,37 @@ for (const [command, before, after] of cases) {
   });
 }
 
-test("closes tabs right of --- after 7 days without a visit", async ({ tabs }) => {
+// Turns on auto-close by clicking the checkbox on the real options page.
+const enableAutoClose = async (
+  context: BrowserContext,
+  serviceWorker: Worker
+) => {
+  const extensionId = new URL(serviceWorker.url()).host;
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/options.html`);
+  const checkbox = page.getByLabel(/Close tabs to the right/);
+  await expect(checkbox).not.toBeChecked();
+  await checkbox.check();
+  await expect
+    .poll(() =>
+      serviceWorker.evaluate(() => chrome.storage.sync.get("autoCloseStaleTabs"))
+    )
+    .toEqual({ autoCloseStaleTabs: true });
+  await page.close();
+};
+
+test("auto-close is off by default", async ({ tabs }) => {
+  await tabs.setup("a ---{x} b c*");
+  await tabs.closeStaleTabs(8);
+  expect(await tabs.layout()).toBe("a ---{x} b c*");
+});
+
+test("closes tabs right of --- after 7 days without a visit", async ({
+  tabs,
+  extensionContext,
+  serviceWorker,
+}) => {
+  await enableAutoClose(extensionContext, serviceWorker);
   await tabs.setup("a ---{x} b [c d] e*");
   await tabs.closeStaleTabs(6);
   expect(await tabs.layout()).toBe("a ---{x} b [c d] e*");
@@ -238,7 +270,12 @@ test("closes tabs right of --- after 7 days without a visit", async ({ tabs }) =
   expect(await tabs.layout()).toBe("a ---{x} e*");
 });
 
-test("closes nothing without a --- group", async ({ tabs }) => {
+test("closes nothing without a --- group", async ({
+  tabs,
+  extensionContext,
+  serviceWorker,
+}) => {
+  await enableAutoClose(extensionContext, serviceWorker);
   await tabs.setup("a [b] c*");
   await tabs.closeStaleTabs(8);
   expect(await tabs.layout()).toBe("a [b] c*");

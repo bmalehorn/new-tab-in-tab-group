@@ -3,7 +3,10 @@
   "description": "Adds shortcuts for creating tabs, reorganizing tabs, and moving the focus.",
   "version": "1.0.8",
   "manifest_version": 3,
-  "permissions": ["tabs", "tabGroups", "alarms"],
+  "permissions": ["tabs", "tabGroups", "alarms", "storage"],
+  "options_ui": {
+    "page": "options.html"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"

@@ -1,5 +1,6 @@
 import { getNextTab } from "./getNextTab.ts";
 import { findSeparator, findStaleTabs } from "./separator.ts";
+import { getSettings } from "./settings.ts";
 
 // "commands": {
 //   "swap-right": {
@@ -219,6 +220,9 @@ const moveAcrossSeparator = async (
 };
 
 export const closeStaleTabs = async (now = Date.now()) => {
+  if (!(await getSettings()).autoCloseStaleTabs) {
+    return;
+  }
   const windows = await chrome.windows.getAll({ populate: true });
   const tabGroups = await chrome.tabGroups.query({});
   const staleIds = windows
