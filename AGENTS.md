@@ -30,6 +30,7 @@ npm test                          # unit tests, then browser tests
 - The service worker is an ES module (`"type": "module"` in the manifest).
 - A new file that the extension loads directly, like an HTML page, must be added to the `cp` in the `build` script in `package.json`.
 - Keep dependencies to dev tooling only (`typescript`, `@types/chrome`, `@playwright/test`). The extension ships no third-party code.
+- Don't add the `tabs` permission. `chrome.tabs` works without it; it only unlocks reading a tab's `url`, `pendingUrl`, `title` and `favIconUrl`, which this extension doesn't need. Requesting it anyway got 1.0.8 rejected as "Purple Potassium" (requesting but not using a permission).
 - New permissions can trigger a warning to users and a slower store review. Prefer ones with no warning, and mention any new permission in the commit message. Before releasing, the user has to justify each new permission in the Developer Dashboard's Privacy practices tab, or publishing fails with `INVALID_ITEM_METADATA`.
 - Comments explain why, not what.
 
