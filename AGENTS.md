@@ -43,7 +43,7 @@ npm test                          # unit tests, then browser tests
 - Don't add the `tabs` permission. `chrome.tabs` works without it; it only unlocks reading a tab's `url`, `pendingUrl`, `title` and `favIconUrl`, which this extension doesn't need. Requesting it anyway got 1.0.8 rejected as "Purple Potassium" (requesting but not using a permission).
 - Create tabs with `createTab` in `background.ts`, not `chrome.tabs.create`. The `tabs.onCreated` listener moves new tabs to after the separator, and `createTab` is how it knows to leave the extension's own tabs alone.
 - `clipboardWrite` is in `optional_permissions` and requested on first use of `copy-url`, because a new permission with a warning disables the extension for existing users until they accept it. Use optional permissions the same way for any future permission with a warning. `permissions.request` must run during the shortcut's user gesture, before any `await`.
-- New permissions can trigger a warning to users and a slower store review. Prefer ones with no warning, and mention any new permission in the commit message. Before releasing, the user has to justify each new permission in the Developer Dashboard's Privacy practices tab, or publishing fails with `INVALID_ITEM_METADATA`.
+- New permissions can trigger a warning to users and a slower store review. Prefer ones with no warning, and mention any new permission in the commit message. The user has to justify each new permission in the Developer Dashboard's Privacy practices tab, or publishing fails with `INVALID_ITEM_METADATA`. The dashboard only shows the field after the build is uploaded, so run `./deploy.sh --upload-only` first.
 - Comments explain why, not what.
 
 ## Testing

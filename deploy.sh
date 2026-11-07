@@ -67,6 +67,13 @@ if [[ "$STATE" != "SUCCEEDED" ]]; then
   exit 1
 fi
 
+# The dashboard only asks for justifications of permissions in an uploaded
+# draft, so a release that adds permissions is uploaded first, then published.
+if [[ "${1:-}" == "--upload-only" ]]; then
+  echo "Uploaded $LOCAL_VERSION as a draft. Fill in anything the dashboard asks for, then run ./deploy.sh to publish."
+  exit 0
+fi
+
 echo "Publishing..."
 RESULT=$(api POST "$API:publish" -H "Content-Type: application/json" -d '{}')
 echo "$RESULT" | jq .
