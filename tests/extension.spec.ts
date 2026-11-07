@@ -332,31 +332,48 @@ test("creates only one separator", async ({ tabs }) => {
   expect(await tabs.layout()).toBe("———{new} new* new a");
 });
 
-// Opens a background tab the way a link would, from the tab named `opener`,
-// or from outside the window if there's none.
-const openTab = async (tabs: Tabs, serviceWorker: Worker, opener?: string) => {
-  const openerTabId = opener ? tabs.idOf(opener) : undefined;
-  await serviceWorker.evaluate(async (openerTabId) => {
-    await chrome.storage.sync.set({ openNewTabsAfterSeparator: true });
-    await chrome.tabs.create({ url: "about:blank", openerTabId, active: false });
-  }, openerTabId);
+// Opens a background tab with the tab named `opener` as its opener, placed
+// the way Chrome places it: right after the opener for a link clicked in a
+// page, or at the end for a link from another app. Chrome gives links from
+// other apps the active tab as opener.
+type OpenedFrom = {
+  opener?: string;
+  at: "next to opener" | "end";
+  active?: boolean;
+};
+const openTab = async (tabs: Tabs, serviceWorker: Worker, from: OpenedFrom) => {
+  const openerTabId = from.opener ? tabs.idOf(from.opener) : undefined;
+  await serviceWorker.evaluate(
+    async ({ openerTabId, nextToOpener, active }) => {
+      await chrome.storage.sync.set({ openNewTabsAfterSeparator: true });
+      const index =
+        nextToOpener && openerTabId !== undefined
+          ? (await chrome.tabs.get(openerTabId)).index + 1
+          : undefined;
+      await chrome.tabs.create({ url: "about:blank", openerTabId, index, active });
+    },
+    { openerTabId, nextToOpener: from.at === "next to opener", active: from.active ?? false }
+  );
 };
 
-const newTabCases: [opener: string | undefined, before: string, after: string][] = [
-  [undefined, "a* ---{x} b c", "a* ---{x} new b c"],
-  ["a", "a* ---{x} b", "a* ---{x} new b"],
-  ["a", "[a*] ---{x} b", "[a*] ---{x} new b"],
-  ["b", "a ---{x} b* c", "a ---{x} b* c new"],
-  [undefined, "a* b c", "a* b c new"],
+const newTabCases: [description: string, from: OpenedFrom, before: string, after: string][] = [
+  ["from another app", { at: "end" }, "a* ---{x} b c", "a* ---{x} new b c"],
+  ["from another app, b active", { opener: "b", at: "end" }, "a ---{x} b* c", "a ---{x} new b* c"],
+  ["from a link in a", { opener: "a", at: "next to opener" }, "a* ---{x} b", "a* ---{x} new b"],
+  ["from a link in a", { opener: "a", at: "next to opener" }, "[a*] ---{x} b", "[a*] ---{x} new b"],
+  ["from a link in b", { opener: "b", at: "next to opener" }, "a ---{x} b* c", "a ---{x} b* new c"],
+  ["from another app, no separator", { at: "end" }, "a* b c", "a* b c new"],
+  ["from another app, last tab b active", { opener: "b", at: "end", active: true }, "a ---{x} b*", "a ---{x} new* b"],
+  ["from a ⌘-click in the last tab b", { opener: "b", at: "end" }, "a ---{x} b*", "a ---{x} b* new"],
 ];
 
-for (const [opener, before, after] of newTabCases) {
-  test(`new tab opened from ${opener ?? "outside"}: ${before} -> ${after}`, async ({
+for (const [description, from, before, after] of newTabCases) {
+  test(`new tab ${description}: ${before} -> ${after}`, async ({
     tabs,
     serviceWorker,
   }) => {
     await tabs.setup(before);
-    await openTab(tabs, serviceWorker, opener);
+    await openTab(tabs, serviceWorker, from);
     await expect.poll(() => tabs.layout()).toBe(after);
     // Make sure it stays there, for the cases where nothing should move.
     await new Promise((resolve) => setTimeout(resolve, 300));

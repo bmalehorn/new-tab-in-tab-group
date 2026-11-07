@@ -47,7 +47,13 @@ test("findSeparator ignores --- groups in other windows", () => {
 
 test("shouldMoveNewTab moves tabs opened from outside or left of ---", () => {
   // pinned | a | --- | b | new
-  const tabs = [
+  const tabs: {
+    id: number;
+    index: number;
+    groupId: number;
+    pinned: boolean;
+    openerTabId?: number;
+  }[] = [
     { id: 10, index: 0, groupId: UNGROUPED, pinned: true },
     { id: 11, index: 1, groupId: UNGROUPED, pinned: false },
     { id: 12, index: 2, groupId: 2, pinned: false },
@@ -65,6 +71,40 @@ test("shouldMoveNewTab moves tabs opened from outside or left of ---", () => {
   assert.equal(opened(13), false, "opened from right of ---");
   assert.equal(opened(undefined, { pinned: true }), false, "new tab is pinned");
   assert.equal(opened(undefined, { index: 3 }), false, "already right after ---");
+});
+
+test("shouldMoveNewTab moves links from other apps, which Chrome gives the active tab as opener", () => {
+  // --- | b | d | c, where d was opened from b, and b is active.
+  const before = [
+    { id: 12, groupId: 2 },
+    { id: 13, groupId: UNGROUPED },
+    { id: 15, groupId: UNGROUPED, openerTabId: 13 },
+    { id: 14, groupId: UNGROUPED },
+  ];
+  // Inserts a new tab opened "from b" at `index` and checks whether it moves.
+  const opened = (index: number) => {
+    const tab = { id: 99, groupId: UNGROUPED, openerTabId: 13 };
+    const tabs = [...before.slice(0, index), tab, ...before.slice(index)].map(
+      (other, i) => ({ pinned: false, ...other, index: i })
+    );
+    return shouldMoveNewTab(tabs[index], tabs, tabGroups);
+  };
+  assert.equal(opened(2), false, "right after b: a link clicked in b");
+  assert.equal(opened(3), false, "after b's other child d: a link clicked in b");
+  assert.equal(opened(4), true, "at the end, past c: a link from another app");
+});
+
+test("shouldMoveNewTab guesses from active when the opener is the last tab", () => {
+  // --- | b, then a tab opened "from b" at the end.
+  const tabs = (active: boolean) => [
+    { id: 12, index: 0, groupId: 2, pinned: false },
+    { id: 13, index: 1, groupId: UNGROUPED, pinned: false },
+    { id: 99, index: 2, groupId: UNGROUPED, pinned: false, openerTabId: 13, active },
+  ];
+  const move = (active: boolean) =>
+    shouldMoveNewTab(tabs(active)[2], tabs(active), tabGroups);
+  assert.equal(move(true), true, "in front: probably from another app");
+  assert.equal(move(false), false, "in the background: a ⌘-clicked link in b");
 });
 
 test("shouldMoveNewTab does nothing without a separator", () => {

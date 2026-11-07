@@ -62,7 +62,9 @@ Each test case describes tab layouts as strings:
 - `*` marks the active tab and `+` other selected tabs.
 - Tabs the extension creates show up as `new`.
 
-Every test starts from a fresh set of tabs and default settings. The "new tab opened from" tests turn on moving new tabs after the separator. Run `npx playwright test --headed` to watch.
+Run browsers headless. A visible browser window pops up over whatever the user is doing. Don't use `--headed` or `headless: false` unless the user asks.
+
+Every test starts from a fresh set of tabs and default settings. The "new tab from" tests turn on moving new tabs after the separator. 
 
 When adding a test, check it fails without the fix. Chrome's tab APIs have off-by-one surprises around group edges and collapsed groups, which is why these tests use a real browser instead of mocks.
 

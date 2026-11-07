@@ -42,7 +42,12 @@ export const findSeparator = (
 // button) or from a pinned tab or a tab left of the separator. Tabs opened
 // from a tab right of the separator stay where Chrome put them.
 export const shouldMoveNewTab = <
-  T extends Tab & { id?: number; pinned: boolean; openerTabId?: number }
+  T extends Tab & {
+    id?: number;
+    pinned: boolean;
+    active?: boolean;
+    openerTabId?: number;
+  }
 >(
   tab: T,
   tabs: T[],
@@ -59,11 +64,32 @@ export const shouldMoveNewTab = <
   if (!opener) {
     return true;
   }
-  return (
+  if (
     opener.pinned ||
     opener.index < separator.start ||
     opener.groupId === separator.groupId
-  );
+  ) {
+    return true;
+  }
+  // Chrome also sets openerTabId on links opened from other apps, to whatever
+  // tab was active, but puts those tabs at the end of the window, in front. A
+  // link clicked in a page opens right after its opener, or after the opener's
+  // other recently opened tabs. So only trust the opener if every tab between
+  // the two was also opened from it.
+  //
+  // If the opener is the last tab, both kinds land at the end. Then guess from
+  // whether it opened in front: links from other apps always do, while
+  // ⌘-clicked links open in the background.
+  const isLast = tabs.every((other) => other.index <= tab.index);
+  if (isLast && tab.active) {
+    return true;
+  }
+  const openedNextToOpener =
+    tab.index > opener.index &&
+    tabs
+      .filter((other) => other.index > opener.index && other.index < tab.index)
+      .every((other) => other.openerTabId === opener.id);
+  return !openedNextToOpener;
 };
 
 // Tabs to the right of the separator that haven't been visited in `maxAgeMs`.
