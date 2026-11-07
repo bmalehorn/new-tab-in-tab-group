@@ -4,7 +4,7 @@ A Chrome extension with shortcuts for creating tabs, reordering tabs and tab gro
 
 ## Loading from source
 
-To try the extension without installing it, run `./try.sh`. It builds the extension and opens it in Chrome for Testing (installed by Playwright) with its own profile, so it works even where your regular Chrome blocks unpacked extensions. Don't sign in to work accounts there. After changing the source, quit it (⌘Q) and run `./try.sh` again. `./try.sh` clears Chrome's cached copy of the background script each launch; without that, Chrome keeps running the old code until the version in `manifest.json` changes. Shortcuts you bind there are kept in `.chrome-profile/`.
+To try the extension without installing it, run `./try.sh`. It builds the extension and opens it in Chrome for Testing (installed by Playwright) with its own profile, so it works even where your regular Chrome blocks unpacked extensions. Don't sign in to work accounts there. After changing the source, quit it (⌘Q) and run `./try.sh` again. `./try.sh` clears Chrome's cached copy of the background script each launch; without that, Chrome keeps running the old code until the version in `manifest.json` changes. Shortcuts you bind there are kept in `.chrome-profile/`. Links from other apps like Slack open in your regular Chrome, so to test those, run `./try.sh https://github.com` while it's open. That hands the URL to it the same way another app would.
 
 To load it into your regular Chrome instead:
 
