@@ -11,10 +11,14 @@ This extension is published and people already use it. Updates must not change h
 - Don't change existing commands' behavior or default shortcuts.
 - A new permission with a warning disables the extension for existing users until they accept it. Use `optional_permissions` and request it when the feature is first used.
 
+## Terminology
+
+The window is laid out as `pinned tabs | regular tabs | barrier | sticky tabs`. The barrier is the leftmost tab group titled with only dashes, like `---`. Regular tabs are temporary and auto-close can close them; new tabs open as the newest regular tab, just left of the barrier. Sticky tabs are kept. Versions up to 1.0.12 had it the other way around, with kept tabs on the left and called the barrier "the separator".
+
 ## Layout
 
 - `src/background.ts`: service worker. `handleCommand` runs each keyboard command; `closeStaleTabs` runs hourly from a `chrome.alarms` alarm.
-- `src/getNextTab.ts`, `src/separator.ts`: pure logic with no `chrome.*` calls, so they can be unit tested in Node.
+- `src/getNextTab.ts`, `src/barrier.ts`: pure logic with no `chrome.*` calls, so they can be unit tested in Node.
 - `src/settings.ts`: settings in `chrome.storage.sync`, with defaults.
 - `src/options.html`, `src/options.ts`: the extension's options page.
 - `src/offscreen.html`, `src/offscreen.ts`: offscreen document that writes to the clipboard, since service workers can't.
@@ -41,7 +45,7 @@ npm test                          # unit tests, then browser tests
 - A new file that the extension loads directly, like an HTML page, must be added to the `cp` in the `build` script in `package.json`.
 - Keep dependencies to dev tooling only (`typescript`, `@types/chrome`, `@playwright/test`). The extension ships no third-party code.
 - Don't add the `tabs` permission. `chrome.tabs` works without it; it only unlocks reading a tab's `url`, `pendingUrl`, `title` and `favIconUrl`, which this extension doesn't need. Requesting it anyway got 1.0.8 rejected as "Purple Potassium" (requesting but not using a permission).
-- Create tabs with `createTab` in `background.ts`, not `chrome.tabs.create`. The `tabs.onCreated` listener moves new tabs to after the separator, and `createTab` is how it knows to leave the extension's own tabs alone.
+- Create tabs with `createTab` in `background.ts`, not `chrome.tabs.create`. The `tabs.onCreated` listener moves new tabs to just left of the barrier, and `createTab` is how it knows to leave the extension's own tabs alone.
 - `clipboardWrite` is in `optional_permissions` and requested on first use of `copy-url`, because a new permission with a warning disables the extension for existing users until they accept it. Use optional permissions the same way for any future permission with a warning. `permissions.request` must run during the shortcut's user gesture, before any `await`.
 - New permissions can trigger a warning to users and a slower store review. Prefer ones with no warning, and mention any new permission in the commit message. The user has to justify each new permission in the Developer Dashboard's Privacy practices tab, or publishing fails with `INVALID_ITEM_METADATA`. The dashboard only shows the field after the build is uploaded, so run `./deploy.sh --upload-only` first.
 - Comments explain why, not what.
@@ -58,17 +62,19 @@ Each test case describes tab layouts as strings:
 ["move-across-separator", "a b+ ---{x} c d* e+", "a b+ d* e+ ---{x} c"],
 ```
 
-- `[a b]` is an expanded group and `{a b}` a collapsed one. A prefix sets the group's title: `---{x}`. A separator is any group titled with only dashes (`-`, `—`, ...), see `isSeparator` in `src/separator.ts`.
+- `[a b]` is an expanded group and `{a b}` a collapsed one. A prefix sets the group's title: `---{x}`. The barrier is the leftmost group titled with only dashes (`-`, `—`, ...), see `isBarrier` in `src/barrier.ts`.
 - `*` marks the active tab and `+` other selected tabs.
 - Tabs the extension creates show up as `new`.
 
 Run browsers headless. A visible browser window pops up over whatever the user is doing. Don't use `--headed` or `headless: false` unless the user asks.
 
-Every test starts from a fresh set of tabs and default settings. The "new tab from" tests turn on moving new tabs after the separator. 
+Every test starts from a fresh set of tabs and default settings. The "new tab from" tests turn on moving new tabs to just left of the barrier. 
 
 When adding a test, check it fails without the fix. Chrome's tab APIs have off-by-one surprises around group edges and collapsed groups, which is why these tests use a real browser instead of mocks.
 
 ## Keyboard shortcuts
+
+Never rename a command in `manifest.json`. Chrome stores users' shortcuts by command name, so a rename unbinds it. That's why `new-tab-after-separator` and `move-across-separator` keep their old names. The same goes for keys in `chrome.storage.sync`: `getSettings` still reads 1.0.12's `openNewTabsAfterSeparator`.
 
 Don't add `suggested_key` defaults to existing commands: users already have their own bindings, and a new default can take a key they use. Chrome also ignores `suggested_key` for keys it uses itself (like ⌘T and ⌘D), allows at most 4, and only applies them on a fresh install. Users bind shortcuts in `chrome://extensions/shortcuts`.
 

@@ -18,17 +18,22 @@
     </style>
   </head>
   <body>
+    <p>
+      A tab group titled <code>---</code> is the barrier. Tabs to its left are
+      regular tabs, and tabs to its right are sticky. Any group titled with
+      only dashes counts, like <code>-</code> or <code>—</code>.
+    </p>
     <label>
-      <input type="checkbox" id="openNewTabsAfterSeparator" />
-      Move newly opened tabs to right after the <code>---</code> tab group
+      <input type="checkbox" id="moveNewTabsToRegular" />
+      Move newly opened tabs to just left of the <code>---</code> barrier
     </label>
     <p>
       Applies to tabs opened from other apps, other windows, the + button,
-      pinned tabs, and tabs to the left of <code>---</code>. Tabs opened from
-      tabs to the right of <code>---</code> stay where Chrome puts them.
+      pinned tabs, and sticky tabs. Tabs opened from regular tabs stay where
+      Chrome puts them.
     </p>
     <label>
-      Close tabs to the right of the <code>---</code> tab group after
+      Close regular tabs (left of the <code>---</code> barrier) after
       <input
         type="number"
         id="autoCloseAfterDays"
@@ -39,10 +44,8 @@
       days without a visit
     </label>
     <p>
-      Leave empty or set to 0 to never close tabs. Pinned and active tabs, and
-      tabs in the <code>---</code> group, are never closed. With no
-      <code>---</code> group, nothing is closed. Any group titled with only
-      dashes counts, like <code>-</code> or <code>—</code>.
+      Leave empty or set to 0 to never close tabs. Pinned, active and sticky
+      tabs are never closed. With no <code>---</code> group, nothing is closed.
     </p>
     <p>
       The "Copy the current tab's URL" shortcut needs permission to write to

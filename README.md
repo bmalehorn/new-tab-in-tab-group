@@ -29,22 +29,28 @@ Run `npm test`. The first time, also run `npx playwright install chromium`.
 
 `./deploy.sh` runs the tests before uploading.
 
-## The `---` separator
+## The `---` barrier
 
-Create a tab group titled `---` (collapse it so it takes little space). Any title made only of dashes works, like `-` or `—`, which helps since macOS turns `--` into `—` as you type. If there are several, the leftmost one counts. Tabs to its left are ones you keep. Tabs to its right are temporary:
+Create a tab group titled `---` (collapse it so it takes little space). This is the barrier. Any title made only of dashes works, like `-` or `—`, which helps since macOS turns `--` into `—` as you type. If there are several, the leftmost one counts. It splits the window in two:
 
-- Newly opened tabs move to right after `---`: links from other apps or windows, the + button, and links opened from pinned tabs or tabs left of `---`. Links opened from tabs right of `---` stay where Chrome puts them. Off by default, turn it on in Settings.
-- "Open new tab after the --- tab group" opens a tab right after `---`.
-- "Move selected tabs to the other side of the --- tab group" moves the selected tabs to just left of `---`, or to just right of it if the current tab is already on the left.
-- If there's no `---` group, both commands first create one at the far left: a collapsed group titled `———` holding a blank tab. That makes every existing tab "temporary", so if auto-close is on they can close after the set number of days.
-- Optionally, tabs to the right of `---` close automatically once they haven't been visited for some number of days. Pinned and active tabs, and tabs in any `---` group, never close. With no `---` group, nothing closes. This is off by default, see Settings.
+```
+pinned tabs | regular tabs | --- | sticky tabs
+```
+
+Regular tabs are temporary, oldest on the left and newest on the right, the same order Chrome uses. Sticky tabs are ones you keep.
+
+- "Open new regular tab" opens a tab just left of the barrier.
+- "Toggle selected tabs between regular and sticky" moves the selected tabs to just right of the barrier, or to just left of it if the current tab is already sticky.
+- If there's no barrier, both commands first create one at the far right: a collapsed group titled `———` holding a blank tab. Every existing tab becomes a regular tab, so if auto-close is on they can close after the set number of days.
+- Newly opened tabs move to just left of the barrier: links from other apps or windows, the + button, and links opened from pinned tabs or sticky tabs. Links opened from regular tabs stay where Chrome puts them. Off by default, turn it on in Settings.
+- Optionally, regular tabs close automatically once they haven't been visited for some number of days. Pinned, active and sticky tabs, and tabs in any `---` group, never close. With no barrier, nothing closes. This is off by default, see Settings.
 
 ## Settings
 
 Go to `chrome://extensions`, click Details on "Tab and Tab Group Shortcuts", then click "Extension options". Or right-click the extension's icon in the toolbar and click Options.
 
-- "Move newly opened tabs to right after the `---` tab group": off by default.
-- "Close tabs to the right of the `---` tab group after N days without a visit": empty by default, which means off. 0 also means off.
+- "Move newly opened tabs to just left of the `---` barrier": off by default.
+- "Close regular tabs after N days without a visit": empty by default, which means off. 0 also means off.
 
 ## Shortcuts
 
@@ -53,8 +59,8 @@ Only `⌘ Shift Y` is set automatically, and only on a fresh install. Suggested 
 | Shortcut    | Command                                                   |
 | ----------- | --------------------------------------------------------- |
 | `⌘ Shift Y` | Open New Tab in Group                                     |
-| `⌘T`        | Open new tab after the --- tab group                      |
-| `⌘D`        | Move selected tabs to the other side of the --- tab group |
+| `⌘T`        | Open new regular tab, just left of the --- barrier        |
+| `⌘D`        | Toggle selected tabs between regular and sticky           |
 | `⌘ Shift ↑` | Swap tab to the left                                      |
 | `⌘ Shift ↓` | Swap tab to the right                                     |
 | `⌘ Shift ,` | Move focus to the tab on the left, wrapping around        |

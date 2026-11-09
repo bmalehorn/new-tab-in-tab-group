@@ -1,10 +1,10 @@
 import { getNextTab } from "./getNextTab.ts";
 import {
-  findSeparator,
+  findBarrier,
   findStaleTabs,
-  NEW_SEPARATOR_TITLE,
+  NEW_BARRIER_TITLE,
   shouldMoveNewTab,
-} from "./separator.ts";
+} from "./barrier.ts";
 import { getSettings } from "./settings.ts";
 
 // "commands": {
@@ -149,9 +149,11 @@ export const handleCommand = async (command: string) => {
     }
     await chrome.tabs.update(nextTab.id, { active: true });
   } else if (command === "new-tab-after-separator") {
-    await newTabAfterSeparator(tabs, tabGroups);
+    // These two command names predate the barrier. Chrome stores users'
+    // shortcuts by command name, so renaming them would unbind them.
+    await newRegularTab(tabs, tabGroups);
   } else if (command === "move-across-separator") {
-    await moveAcrossSeparator(currentTabId, tabs, tabGroups);
+    await toggleSticky(currentTabId, tabs, tabGroups);
   } else {
     throw new Error(`unimplemented command: ${command}`);
   }
@@ -173,62 +175,56 @@ const createTab = (properties: chrome.tabs.CreateProperties) => {
   return created;
 };
 
-// Pinned tabs always come first, so "leftmost" means right after them.
-const firstUnpinnedIndex = (tabs: chrome.tabs.Tab[]) =>
-  tabs.filter((tab) => tab.pinned).length;
-
-// Returns the separator, first creating one at the far left if there isn't
-// one: a collapsed "———" group holding a blank tab. Also returns the window's
-// tabs, re-read if the separator was just created.
-const ensureSeparator = async (
+// Returns the barrier, first creating one at the far right if there isn't
+// one, so every existing tab is a regular tab: a collapsed "———" group holding
+// a blank tab. Also returns the window's tabs, re-read if the barrier was just
+// created.
+const ensureBarrier = async (
   tabs: chrome.tabs.Tab[],
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
-  const separator = findSeparator(tabs, tabGroups);
-  if (separator) {
-    return { separator, tabs };
+  const barrier = findBarrier(tabs, tabGroups);
+  if (barrier) {
+    return { barrier, tabs };
   }
-  const placeholder = await createTab({
-    url: "about:blank",
-    index: firstUnpinnedIndex(tabs),
-    active: false,
-  });
+  const placeholder = await createTab({ url: "about:blank", active: false });
   const groupId = await chrome.tabs.group({ tabIds: placeholder.id! });
   await chrome.tabGroups.update(groupId, {
-    title: NEW_SEPARATOR_TITLE,
+    title: NEW_BARRIER_TITLE,
     collapsed: true,
   });
   return {
-    separator: { groupId, start: placeholder.index, end: placeholder.index },
+    barrier: { groupId, start: placeholder.index, end: placeholder.index },
     tabs: await chrome.tabs.query({ currentWindow: true }),
   };
 };
 
-const newTabAfterSeparator = async (
+// Opens a tab just left of the barrier, as the newest regular tab.
+const newRegularTab = async (
   tabs: chrome.tabs.Tab[],
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
-  const { separator } = await ensureSeparator(tabs, tabGroups);
-  const newTab = await createTab({ index: separator.end + 1 });
+  const { barrier } = await ensureBarrier(tabs, tabGroups);
+  const newTab = await createTab({ index: barrier.start });
   // A tab created at the edge of a group can land inside it.
   if (newTab.id !== undefined && newTab.groupId !== -1) {
     await chrome.tabs.ungroup(newTab.id);
   }
 };
 
-// Moves the selected tabs to just left of the separator, or if the active tab
-// is already left of it, to just right of it.
-const moveAcrossSeparator = async (
+// Makes the selected tabs sticky by moving them to just right of the barrier,
+// or if the active tab is already sticky, makes them regular by moving them to
+// just left of it.
+const toggleSticky = async (
   currentTabId: number,
   windowTabs: chrome.tabs.Tab[],
   tabGroups: chrome.tabGroups.TabGroup[]
 ) => {
-  const { separator, tabs } = await ensureSeparator(windowTabs, tabGroups);
+  const { barrier, tabs } = await ensureBarrier(windowTabs, tabGroups);
   const currentTab = tabs.find((tab) => tab.id === currentTabId)!;
   const tabIds = tabs
     .filter(
-      (tab) =>
-        tab.highlighted && !tab.pinned && tab.groupId !== separator.groupId
+      (tab) => tab.highlighted && !tab.pinned && tab.groupId !== barrier.groupId
     )
     .map((tab) => tab.id)
     .filter((id) => id !== undefined);
@@ -243,31 +239,34 @@ const moveAcrossSeparator = async (
     await chrome.tabs.ungroup(groupedIds as [number, ...number[]]);
   }
 
-  // Each move shifts the separator, so look it up again every time.
-  const separatorRange = async () => {
-    const separatorTabs = await chrome.tabs.query({
-      groupId: separator.groupId,
-    });
-    const indexes = separatorTabs.map((tab) => tab.index);
-    return { start: Math.min(...indexes), end: Math.max(...indexes) };
-  };
-
-  if (currentTab.index < separator.start) {
+  if (currentTab.index < barrier.start) {
     for (const tabId of [...tabIds].reverse()) {
-      const { end } = await separatorRange();
-      const tab = await chrome.tabs.get(tabId);
-      // If the tab is left of the separator, removing it shifts the separator left.
-      await chrome.tabs.move(tabId, { index: tab.index < end ? end : end + 1 });
+      await moveRightOfBarrier(tabId, barrier.groupId);
     }
   } else {
     for (const tabId of tabIds) {
-      const { start } = await separatorRange();
-      const tab = await chrome.tabs.get(tabId);
-      await chrome.tabs.move(tabId, {
-        index: tab.index < start ? start - 1 : start,
-      });
+      await moveLeftOfBarrier(tabId, barrier.groupId);
     }
   }
+};
+
+// Each move shifts the barrier, so look it up again every time.
+const barrierRange = async (groupId: number) => {
+  const indexes = (await chrome.tabs.query({ groupId })).map((tab) => tab.index);
+  return { start: Math.min(...indexes), end: Math.max(...indexes) };
+};
+
+const moveRightOfBarrier = async (tabId: number, groupId: number) => {
+  const { end } = await barrierRange(groupId);
+  const { index } = await chrome.tabs.get(tabId);
+  // If the tab is left of the barrier, removing it shifts the barrier left.
+  await chrome.tabs.move(tabId, { index: index < end ? end : end + 1 });
+};
+
+const moveLeftOfBarrier = async (tabId: number, groupId: number) => {
+  const { start } = await barrierRange(groupId);
+  const { index } = await chrome.tabs.get(tabId);
+  await chrome.tabs.move(tabId, { index: index < start ? start - 1 : start });
 };
 
 export const closeStaleTabs = async (now = Date.now()) => {
@@ -367,7 +366,7 @@ export const moveNewTab = async (tab: chrome.tabs.Tab) => {
   if (tab.id === undefined || extensionTabIds.delete(tab.id)) {
     return;
   }
-  if (!(await getSettings()).openNewTabsAfterSeparator || (await isStartingUp())) {
+  if (!(await getSettings()).moveNewTabsToRegular || (await isStartingUp())) {
     return;
   }
   const tabs = await chrome.tabs.query({ windowId: tab.windowId });
@@ -377,15 +376,11 @@ export const moveNewTab = async (tab: chrome.tabs.Tab) => {
   if (!current || !shouldMoveNewTab(current, tabs, tabGroups)) {
     return;
   }
-  const separator = findSeparator(tabs, tabGroups)!;
+  const barrier = findBarrier(tabs, tabGroups)!;
   if (current.groupId !== -1) {
     await chrome.tabs.ungroup(tab.id);
   }
-  const separatorTabs = await chrome.tabs.query({ groupId: separator.groupId });
-  const end = Math.max(...separatorTabs.map((separatorTab) => separatorTab.index));
-  const { index } = await chrome.tabs.get(tab.id);
-  // If the tab is left of the separator, removing it shifts the separator left.
-  await chrome.tabs.move(tab.id, { index: index < end ? end : end + 1 });
+  await moveLeftOfBarrier(tab.id, barrier.groupId);
 };
 chrome.tabs.onCreated.addListener(moveNewTab);
 

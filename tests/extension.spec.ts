@@ -3,7 +3,8 @@
 //
 // Tab layouts are written as strings: "a [b* c] ---{d e} f" means tab a, an
 // expanded group with b and c, a collapsed group titled "---" with d and e,
-// then f. The active tab has a *, other selected tabs have a +. Tabs the
+// then f. Here a, b and c are regular tabs, "---" is the barrier, and f is
+// sticky. The active tab has a *, other selected tabs have a +. Tabs the
 // extension opens are named "new".
 
 import path from "node:path";
@@ -225,21 +226,23 @@ const cases: [command: string, before: string, after: string][] = [
   ["focus-left", "a* b c", "a b c*"],
   ["focus-left", "a b* c", "a* b c"],
 
-  ["new-tab-after-separator", "a ---{x} b c*", "a ---{x} new* b c"],
-  ["new-tab-after-separator", "a ---[x] [b c*]", "a ---[x] new* [b c]"],
-  ["new-tab-after-separator", "a b*", "———{new} new* a b"],
-  ["new-tab-after-separator", "a* ———{x} b", "a ———{x} new* b"],
+  // new-tab-after-separator opens a regular tab just left of the barrier.
+  ["new-tab-after-separator", "a ---{x} b c*", "a new* ---{x} b c"],
+  ["new-tab-after-separator", "[a b*] ---[x] c", "[a b] new* ---[x] c"],
+  ["new-tab-after-separator", "a b*", "a b new* ———{new}"],
+  ["new-tab-after-separator", "a* ———{x} b", "a new* ———{x} b"],
+  ["new-tab-after-separator", "a* -[x] b", "a new* -[x] b"],
 
+  // move-across-separator toggles tabs between regular and sticky.
+  ["move-across-separator", "a b* ---{x} c", "a ---{x} b* c"],
   ["move-across-separator", "a ---{x} b c*", "a c* ---{x} b"],
-  ["move-across-separator", "a* b ---{x} c", "b ---{x} a* c"],
   ["move-across-separator", "a ---{x} [b c*]", "a c* ---{x} [b]"],
-  ["move-across-separator", "a b+ ---{x} c d* e+", "a b+ d* e+ ---{x} c"],
   ["move-across-separator", "a+ b* c ---{x} d", "c ---{x} a+ b* d"],
-  ["move-across-separator", "a b c*", "c* ———{new} a b"],
-  ["move-across-separator", "a+ b c*", "a+ c* ———{new} b"],
+  ["move-across-separator", "a b+ ---{x} c d* e+", "a b+ d* e+ ---{x} c"],
+  ["move-across-separator", "a b c*", "a b ———{new} c*"],
+  ["move-across-separator", "a+ b c*", "b ———{new} a+ c*"],
   ["move-across-separator", "a ---{x} b ---{y} c*", "a c* ---{x} b ---{y}"],
   ["move-across-separator", "a —{x} b*", "a b* —{x}"],
-  ["new-tab-after-separator", "a* -[x] b", "a -[x] new* b"],
 ];
 
 for (const [command, before, after] of cases) {
@@ -260,7 +263,7 @@ const setAutoCloseDays = async (
   const extensionId = new URL(serviceWorker.url()).host;
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/options.html`);
-  const input = page.getByLabel(/Close tabs to the right/);
+  const input = page.getByLabel(/Close regular tabs/);
   await expect(input).toHaveValue("");
   await input.fill(days);
   await expect
@@ -274,33 +277,33 @@ const setAutoCloseDays = async (
 };
 
 test("auto-close is off by default", async ({ tabs }) => {
-  await tabs.setup("a ---{x} b c*");
+  await tabs.setup("a b* ---{x} c");
   await tabs.closeStaleTabs(8);
-  expect(await tabs.layout()).toBe("a ---{x} b c*");
+  expect(await tabs.layout()).toBe("a b* ---{x} c");
 });
 
-test("closes tabs right of --- after the set number of days", async ({
+test("closes regular tabs after the set number of days", async ({
   tabs,
   extensionContext,
   serviceWorker,
 }) => {
   await setAutoCloseDays(extensionContext, serviceWorker, "7");
-  await tabs.setup("a ---{x} b [c d] e*");
+  await tabs.setup("a [b c] d* ---{x} e");
   await tabs.closeStaleTabs(6);
-  expect(await tabs.layout()).toBe("a ---{x} b [c d] e*");
+  expect(await tabs.layout()).toBe("a [b c] d* ---{x} e");
   await tabs.closeStaleTabs(8);
-  expect(await tabs.layout()).toBe("a ---{x} e*");
+  expect(await tabs.layout()).toBe("d* ---{x} e");
 });
 
-test("auto-close never closes separator tabs", async ({
+test("auto-close never closes barrier or sticky tabs", async ({
   tabs,
   extensionContext,
   serviceWorker,
 }) => {
   await setAutoCloseDays(extensionContext, serviceWorker, "1");
-  await tabs.setup("a ---{x} b —{y z} c*");
+  await tabs.setup("a b* ---{x} c —{y z} d");
   await tabs.closeStaleTabs(2);
-  expect(await tabs.layout()).toBe("a ---{x} —{y z} c*");
+  expect(await tabs.layout()).toBe("b* ---{x} c —{y z} d");
 });
 
 test("0 days turns auto-close off", async ({
@@ -309,9 +312,9 @@ test("0 days turns auto-close off", async ({
   serviceWorker,
 }) => {
   await setAutoCloseDays(extensionContext, serviceWorker, "0");
-  await tabs.setup("a ---{x} b c*");
+  await tabs.setup("a b* ---{x} c");
   await tabs.closeStaleTabs(1000);
-  expect(await tabs.layout()).toBe("a ---{x} b c*");
+  expect(await tabs.layout()).toBe("a b* ---{x} c");
 });
 
 test("closes nothing without a --- group", async ({
@@ -325,11 +328,11 @@ test("closes nothing without a --- group", async ({
   expect(await tabs.layout()).toBe("a [b] c*");
 });
 
-test("creates only one separator", async ({ tabs }) => {
+test("creates only one barrier", async ({ tabs }) => {
   await tabs.setup("a*");
   await tabs.run("new-tab-after-separator");
   await tabs.run("new-tab-after-separator");
-  expect(await tabs.layout()).toBe("———{new} new* new a");
+  expect(await tabs.layout()).toBe("a new new* ———{new}");
 });
 
 // Opens a background tab with the tab named `opener` as its opener, placed
@@ -345,7 +348,7 @@ const openTab = async (tabs: Tabs, serviceWorker: Worker, from: OpenedFrom) => {
   const openerTabId = from.opener ? tabs.idOf(from.opener) : undefined;
   await serviceWorker.evaluate(
     async ({ openerTabId, nextToOpener, active }) => {
-      await chrome.storage.sync.set({ openNewTabsAfterSeparator: true });
+      await chrome.storage.sync.set({ moveNewTabsToRegular: true });
       const index =
         nextToOpener && openerTabId !== undefined
           ? (await chrome.tabs.get(openerTabId)).index + 1
@@ -357,17 +360,15 @@ const openTab = async (tabs: Tabs, serviceWorker: Worker, from: OpenedFrom) => {
 };
 
 const newTabCases: [description: string, from: OpenedFrom, before: string, after: string][] = [
-  ["from another app", { at: "end" }, "a* ---{x} b c", "a* ---{x} new b c"],
-  ["from another app, b active", { opener: "b", at: "end" }, "a ---{x} b* c", "a ---{x} new b* c"],
-  ["from a link in a", { opener: "a", at: "next to opener" }, "a* ---{x} b", "a* ---{x} new b"],
-  ["from a link in a", { opener: "a", at: "next to opener" }, "[a*] ---{x} b", "[a*] ---{x} new b"],
-  ["from a link in b", { opener: "b", at: "next to opener" }, "a ---{x} b* c", "a ---{x} b* new c"],
-  ["from another app, no separator", { at: "end" }, "a* b c", "a* b c new"],
-  ["from another app, last tab b active", { opener: "b", at: "end", active: true }, "a ---{x} b*", "a ---{x} new* b"],
-  ["from a ⌘-click in the last tab b", { opener: "b", at: "end" }, "a ---{x} b*", "a ---{x} b* new"],
-];
-
-for (const [description, from, before, after] of newTabCases) {
+  ["from another app", { at: "end" }, "a* ---{x} b c", "a* new ---{x} b c"],
+  ["from another app, a active", { opener: "a", at: "end" }, "a* b ---{x} c", "a* b new ---{x} c"],
+  ["from another app, sticky c active", { opener: "c", at: "end", active: true }, "a ---{x} c*", "a new* ---{x} c"],
+  ["from a link in sticky c", { opener: "c", at: "next to opener" }, "a ---{x} c* d", "a new ---{x} c* d"],
+  ["from a link in a", { opener: "a", at: "next to opener" }, "a* b ---{x} c", "a* new b ---{x} c"],
+  ["from a link in b", { opener: "b", at: "next to opener" }, "a b* ---{x} c", "a b* new ---{x} c"],
+  ["from a link in a", { opener: "a", at: "next to opener" }, "[a*] ---{x} b", "[a*] new ---{x} b"],
+  ["from another app, no barrier", { at: "end" }, "a* b c", "a* b c new"],
+];for (const [description, from, before, after] of newTabCases) {
   test(`new tab ${description}: ${before} -> ${after}`, async ({
     tabs,
     serviceWorker,
@@ -386,6 +387,15 @@ test("new tabs aren't moved by default", async ({ tabs, serviceWorker }) => {
   await serviceWorker.evaluate(() => chrome.tabs.create({ url: "about:blank", active: false }));
   await new Promise((resolve) => setTimeout(resolve, 300));
   expect(await tabs.layout()).toBe("a* ---{x} b new");
+});
+
+test("1.0.12's setting name still turns on moving new tabs", async ({ tabs, serviceWorker }) => {
+  await tabs.setup("a* ---{x} b");
+  await serviceWorker.evaluate(async () => {
+    await chrome.storage.sync.set({ openNewTabsAfterSeparator: true });
+    await chrome.tabs.create({ url: "about:blank", active: false });
+  });
+  await expect.poll(() => tabs.layout()).toBe("a* new ---{x} b");
 });
 
 test("unknown commands throw", async ({ tabs }) => {

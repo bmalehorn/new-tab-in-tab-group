@@ -4,14 +4,14 @@ const autoCloseAfterDays = document.getElementById(
   "autoCloseAfterDays"
 ) as HTMLInputElement;
 
-const openNewTabsAfterSeparator = document.getElementById(
-  "openNewTabsAfterSeparator"
+const moveNewTabsToRegular = document.getElementById(
+  "moveNewTabsToRegular"
 ) as HTMLInputElement;
 
 const settings = await getSettings();
-openNewTabsAfterSeparator.checked = settings.openNewTabsAfterSeparator;
-openNewTabsAfterSeparator.addEventListener("change", () =>
-  setSettings({ openNewTabsAfterSeparator: openNewTabsAfterSeparator.checked })
+moveNewTabsToRegular.checked = settings.moveNewTabsToRegular;
+moveNewTabsToRegular.addEventListener("change", () =>
+  setSettings({ moveNewTabsToRegular: moveNewTabsToRegular.checked })
 );
 
 const days = settings.autoCloseAfterDays;

@@ -1,7 +1,7 @@
 {
   "name": "Tab and Tab Group Shortcuts",
   "description": "Adds shortcuts for creating tabs, reorganizing tabs, and moving the focus.",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "manifest_version": 3,
   "permissions": ["tabGroups", "alarms", "storage", "activeTab", "offscreen"],
   "options_ui": {
@@ -38,10 +38,10 @@
       }
     },
     "new-tab-after-separator": {
-      "description": "Open new tab after the --- tab group"
+      "description": "Open new regular tab, just left of the --- barrier"
     },
     "move-across-separator": {
-      "description": "Move selected tabs to the other side of the --- tab group"
+      "description": "Toggle selected tabs between regular and sticky (across the --- barrier)"
     },
     "copy-url": {
       "description": "Copy the current tab's URL"
